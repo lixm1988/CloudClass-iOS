@@ -1,9 +1,9 @@
 #pragma once
 
-//#include "hmac.h"
-//#include "opensslv.h"
-#include <openssl/hmac.h>
-#include <openssl/evp.h>
+#include "hmac.h"
+#include "opensslv.h"
+//#include <openssl/hmac.h>
+//#include <openssl/evp.h>
 #include <cctype>
 #include <cstddef>
 #include <cstdlib>
@@ -14,7 +14,7 @@
 #include <string>
 #include <random>
 
-#include "Packer.h" 
+#include "Packer.h"
 
 namespace agora {
 namespace tools {
