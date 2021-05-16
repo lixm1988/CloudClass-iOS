@@ -3,7 +3,7 @@
  [5.4下载链接](https://download.agora.io/sdk/release/AgoraClassroomSDK-1.1.0-5.4.zip)
 > 可以在Terminal里面输入Swift -version，查看当前Swift版本。
 
-2. [下载aPaaS依赖库SDK]()：
+2. [下载aPaaS依赖库SDK](https://github.com/AgoraIO-Community/CloudClass-iOS/releases/download/v1.1.0.1/ThirdPart.1.1.0.zip)：
 依赖库里面包含：AFNetworking、AgoraRtcEngine_Special_iOS、AgoraRtm_iOS、AliyunOSSiOS、CocoaLumberjack、dsBridge、OpenSSL-Universal、Whiteboard、YYModel
 
 3. 把aPaaS SDK解压到AgoraEduSDK/Frameworks文件夹里面
