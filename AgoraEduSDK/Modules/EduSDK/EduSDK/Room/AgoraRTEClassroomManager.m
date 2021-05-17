@@ -694,7 +694,7 @@ typedef void (^OnJoinRoomSuccessBlock)(AgoraRTEUserService *userService);
     
     NSString *rtcToken = model.user.rtcToken;
     NSString *roomUuid = model.room.roomInfo.roomUuid;
-    NSInteger uid = model.user.streamUuid.integerValue;
+    NSInteger uid = model.user.streamUuid.longLongValue;
     int errorCode = [AgoraRTCManager.shareManager joinChannelByToken:rtcToken channelId:roomUuid info:info uid:uid autoSubscribeAudio:self.mediaOption.autoSubscribe autoSubscribeVideo:self.mediaOption.autoSubscribe];
     if (errorCode != 0) {
         if (failureBlock) {

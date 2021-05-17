@@ -453,7 +453,7 @@ extension LoginViewController {
     }
 
     public override var shouldAutorotate: Bool {
-        return false
+        return true
     }
     
     public override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
