@@ -11,11 +11,15 @@ import AgoraReport
 import AgoraUIBaseViews
 import AgoraUIEduBaseViews
 import AgoraEduContext
+import EduSDK
 
 @objc public protocol AgoraBoardControllerDelegate: NSObjectProtocol {
     func boardController(_ controller: AgoraBoardController,
                          didUpdateUsers userId: [String])
     
+    func boardController(_ controller: AgoraBoardController,
+                         didScenePathChanged path: String)
+
     func boardController(_ controller: AgoraBoardController,
                          didOccurError error: Error)
 }
@@ -298,6 +302,10 @@ extension AgoraBoardController: AgoraBoardVMDelegate {
             self.eventDispatcher.onSetDownloadTimeOut(url.absoluteString)
         }
     }
+    
+    func didScenePathChanged(path: String) {
+        delegate?.boardController(self, didScenePathChanged: path)
+    }
 }
 
 // MARK: - AgoraDownloadProtocol
@@ -320,11 +328,11 @@ extension AgoraBoardController: AgoraDownloadProtocol {
         
             eventDispatcher.onDownloadError(urlString)
             afterWork.cancel()
-            viewsEnable(false)
+//            viewsEnable(false)
         } else {
             eventDispatcher.onSetDownloadComplete(urlString)
             afterWork.cancel()
-            viewsEnable(true)
+//            viewsEnable(true)
         }
     }
     

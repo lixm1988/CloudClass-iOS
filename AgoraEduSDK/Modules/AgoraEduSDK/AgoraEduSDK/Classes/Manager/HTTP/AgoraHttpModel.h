@@ -37,6 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AgoraChatModel : AgoraBaseModel
 @property (nonatomic, assign) NSInteger messageId;
+@property (nonatomic, strong) NSString *peerMessageId;
 @property (nonatomic, strong) NSArray<NSString *> *sensitiveWords;
 @end
 

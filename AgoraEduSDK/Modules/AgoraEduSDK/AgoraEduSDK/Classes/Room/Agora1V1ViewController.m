@@ -10,7 +10,6 @@
 #import "AgoraBaseViewController+Chat.h"
 #import "AgoraBaseViewController+Room.h"
 #import "AgoraBaseViewController+User.h"
-#import "AgoraBaseViewController+Screen.h"
 
 @interface Agora1V1ViewController ()<AgoraRTEClassroomDelegate>
 

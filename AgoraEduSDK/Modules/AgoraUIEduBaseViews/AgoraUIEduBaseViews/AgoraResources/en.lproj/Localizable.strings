@@ -9,8 +9,10 @@
 // Chat
 ChatText = "Message";
 ChatEmptyText = "No Message";
+ChatConversation = "Quiz";
 ChatSendText = "Send";
 ChatPlaceholderText = "Input";
+ChatSilencedPlaceholderText = "Banned to chat";
 ChatDisableToastText = "Turn on mute mode";
 ChatEnableToastText = "Turn off mute mode";
 ChatDisableText = "mute chat";
@@ -23,6 +25,7 @@ UserListCoVideo = "Stage";
 UserListBoard = "Auth";
 UserListCamera = "Camera";
 UserListMicro = "Mute";
+UserListChat = "Silence";
 UserListReward = "Rewards";
 
 ChatMuteTagText = "You are not allowed to send messages in the chat box";

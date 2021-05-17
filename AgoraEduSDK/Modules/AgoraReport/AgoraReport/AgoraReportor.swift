@@ -66,8 +66,8 @@ import AFNetworking
     private var context: AgoraReportorContext?
     
     // Duration event
-    private var startEvents = [String: Int]()
-    private var startSubEvents = [String: Int]()
+    private var startEvents = [String: Int64]()
+    private var startSubEvents = [String: Int64]()
     
     private let startEvnetsMaxCount = 10000
     
@@ -157,7 +157,7 @@ public extension AgoraReportor {
                                  api: String? = nil,
                                  errorCode: Int? = nil,
                                  httpCode: Int? = nil,
-                                 elapse: Int? = nil,
+                                 elapse: Int64? = nil,
                                  count: Int? = nil) {
         httpRequest(event: event,
                     category: category,
@@ -177,7 +177,7 @@ private extension AgoraReportor {
                      api: String? = nil,
                      errorCode: Int? = nil,
                      httpCode: Int? = nil,
-                     elapse: Int? = nil,
+                     elapse: Int64? = nil,
                      count: Int? = nil) {
         guard let context = self.context else {
             fatalError("call ‘set(context: AgoraReportorContext)’ before")
@@ -268,8 +268,8 @@ private extension AgoraReportor {
 }
 
 fileprivate extension Date {
-    func agora_report_timestamp() -> Int {
-        return Int(timeIntervalSince1970 * 1000)
+    func agora_report_timestamp() -> Int64 {
+        return Int64(timeIntervalSince1970 * 1000)
     }
 }
 

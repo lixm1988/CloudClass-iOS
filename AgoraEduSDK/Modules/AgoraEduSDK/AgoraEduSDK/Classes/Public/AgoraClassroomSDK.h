@@ -6,6 +6,8 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <AgoraExtApp/AgoraExtApp.h>
+#import <AgoraWidget/AgoraWidget.h>
 #import "AgoraEduObjects.h"
 #import "AgoraEduClassroom.h"
 
@@ -19,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
       didCompleted:(NSError * _Nullable)error;
 @end
 
-@interface AgoraEduSDK : NSObject
+@interface AgoraClassroomSDK : NSObject
 + (void)setConfig:(AgoraEduSDKConfig *)config;
 
 + (AgoraEduClassroom * _Nullable)launch:(AgoraEduLaunchConfig *)config
@@ -31,6 +33,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)downloadCoursewares:(id<AgoraEduCoursewareDelegate> _Nullable)delegate;
 // 注册容器App
 + (void)registerExtApps:(NSArray<AgoraExtAppConfiguration *> *)apps;
+
++ (void)registerWidgets:(NSArray<AgoraWidgetConfiguration *> *)widgets;
 
 + (NSString *)version;
 @end

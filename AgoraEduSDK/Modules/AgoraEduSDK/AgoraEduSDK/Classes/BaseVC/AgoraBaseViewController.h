@@ -7,7 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <AgoraEduSDK/AgoraEduSDK.h>
+#import <AgoraEduSDK/AgoraClassroomSDK.h>
 #import <AgoraEduSDK/AgoraEduSDK-Swift.h>
 #import <AgoraEduContext/AgoraEduContext-Swift.h>
 #import <AgoraUIBaseViews/AgoraUIBaseViews-Swift.h>
@@ -41,12 +41,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 // chat
 - (void)onAddRoomMessage:(AgoraEduContextChatInfo *)chatInfo;
+- (void)onAddConversationMessage:(AgoraEduContextChatInfo *)chatInfo;
 - (void)updateRoomChatState:(BOOL)muteChat;
+- (void)updateLocalChatState:(BOOL)muteChat to:(AgoraEduContextUserInfo *)userInfo by:(AgoraEduContextUserInfo *)operator;
+- (void)updateRemoteChatState:(BOOL)muteChat to:(AgoraEduContextUserInfo *)userInfo by:(AgoraEduContextUserInfo *)operator;
 - (void)onShowChatTips:(NSString *)message;
-
-// screen
-- (void)onUpdateScreenShareState:(BOOL)sharing streamUuid:(NSString *)streamUuid;
-- (void)onShowScreenShareTips:(NSString *)message;
 
 // handsup
 - (void)onSetHandsUpEnable:(BOOL)enable;
@@ -68,15 +67,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) AgoraScreenVM * _Nullable screenVM;
 
 // Protocol
-//@property (nonatomic, weak) id<AgoraKitRoomProtocol> roomProtocol;
-//@property (nonatomic, weak) id<AgoraKitUserProtocol> userProtocol;
-//@property (nonatomic, weak) id<AgoraKitMessageProtocol> chatProtocol;
-//@property (nonatomic, weak) id<AgoraKitHandsUpProtocol> handsUpProtocol;
-//@property (nonatomic, weak) id<AgoraKitScreenShareProtocol> screenProtocol;
-//private var eventDispatcher: AgoraUIEventDispatcher
 @property (nonatomic, strong) AgoraUIEventDispatcher *eventDispatcher;
 
-// ContextPool
+//// ContextPool
 @property (nonatomic, strong) AgoraEduContextPoolIMP *contextPool;
 
 // View
@@ -90,11 +83,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)registerExtApps:(NSArray<AgoraExtAppConfiguration *> *)apps;
 
+- (void)registerWidgets:(NSArray<AgoraWidgetConfiguration *> *)widgets;
+
 - (void)classroomPropertyUpdated:(AgoraRTEClassroom *)classroom
                            cause:(AgoraRTEObject *)cause;
 
 // init controllers
 - (void)initChildren;
+- (void)initContextPool;
 
 // rte delegate
 // TODO: move to category

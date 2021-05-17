@@ -401,9 +401,16 @@ The RoomState property in the room will trigger this callback when it changes.
         }
     }
     
+    WhiteSceneState *sceneState = self.room.sceneState;
+    if (sceneState != NULL && ![sceneState.scenePath isEqualToString:self.boardScenePath]) {
+        self.boardScenePath = sceneState.scenePath;
+        if ([self.delegate respondsToSelector:@selector(onWhiteBoardSceneChanged:)]) {
+            [self.delegate onWhiteBoardSceneChanged:self.boardScenePath];
+        }
+    }
+    
     // 场景状态 WhiteSceneState 修改时
     if (modifyState.sceneState) {
-        WhiteSceneState *sceneState = self.room.sceneState;
         NSArray<WhiteScene *> *scenes = sceneState.scenes;
         NSInteger sceneIndex = sceneState.index;
         WhiteScene *scene = scenes[sceneIndex];
@@ -415,13 +422,6 @@ The RoomState property in the room will trigger this callback when it changes.
         if ([self.delegate respondsToSelector:@selector(onWhiteBoardPageChanged:pageCount:)]) {
             [self.delegate onWhiteBoardPageChanged:sceneIndex
                                          pageCount:scenes.count];
-        }
-        
-        if (![sceneState.scenePath isEqualToString:self.boardScenePath]) {
-            self.boardScenePath = sceneState.scenePath;
-            if ([self.delegate respondsToSelector:@selector(onWhiteBoardSceneChanged:)]) {
-                [self.delegate onWhiteBoardSceneChanged:self.boardScenePath];
-            }
         }
     }
 }

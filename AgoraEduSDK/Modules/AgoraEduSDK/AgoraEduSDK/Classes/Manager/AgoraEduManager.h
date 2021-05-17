@@ -7,7 +7,6 @@
 //
 
 #import <AgoraWhiteBoard/AgoraWhiteBoard.h>
-#import <AgoraEduSDK/AgoraEduSDK.h>
 #import <AgoraLog/AgoraLog.h>
 #import <EduSDK/EduSDK.h>
 #import "AgoraHTTPConfiguration.h"

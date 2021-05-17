@@ -28,8 +28,49 @@ fileprivate let AgoraEventKeyEntryRoom = "joinRoom"
                                        api: String?)
 }
 
-@objcMembers public class AgoraApaasReportor: AgoraReportor {
+@objcMembers public class AgoraApaasReportor: AgoraReportor,
+                                              AgoraApaasReportorEventTube{
     public static let apaasShared = AgoraApaasReportor()
+    
+    @objc public func startJoinRoomNotificate() {
+        startJoinRoom()
+    }
+    
+    public func endJoinRoomNotificate(errorCode: Int) {
+        endJoinRoom(errorCode: errorCode)
+    }
+    
+    public func endJoinRoomNotificate(errorCode: Int,
+                                      httpCode: Int) {
+        endJoinRoom(errorCode: errorCode,
+                    httpCode: httpCode)
+    }
+    
+    public func startJoinRoomSubEventNotificate(subEvent: String) {
+        startJoinRoomSubEvent(subEvent: subEvent)
+    }
+    
+    public func endJoinRoomSubEventNotificate(subEvent: String,
+                                              type: AgoraReportEndCategory,
+                                              errorCode: Int,
+                                              api: String?) {
+        endJoinRoomSubEvent(subEvent: subEvent,
+                            type: type,
+                            errorCode: errorCode,
+                            api: api)
+    }
+    
+    public func endJoinRoomSubEventNotificate(subEvent: String,
+                                              type: AgoraReportEndCategory,
+                                              errorCode: Int,
+                                              httpCode: Int,
+                                              api: String?) {
+        endJoinRoomSubEvent(subEvent: subEvent,
+                            type: type,
+                            errorCode: errorCode,
+                            httpCode: httpCode,
+                            api: api)
+    }
 }
 
 public extension AgoraApaasReportor {
@@ -93,44 +134,44 @@ public extension AgoraApaasReportor {
     }
 }
 
-extension AgoraApaasReportor: AgoraApaasReportorEventTube {
-    public func startJoinRoomNotificate() {
-        startJoinRoom()
+
+@objc public class ApaasReporterWrapper: NSObject {
+    @objc public class func getApaasReporter() -> AgoraReportor {
+        return AgoraApaasReportor.apaasShared
     }
     
-    public func endJoinRoomNotificate(errorCode: Int) {
-        endJoinRoom(errorCode: errorCode)
+    @objc public class func startJoinRoom() {
+        AgoraApaasReportor.apaasShared.startJoinRoom()
     }
     
-    public func endJoinRoomNotificate(errorCode: Int,
-                                      httpCode: Int) {
-        endJoinRoom(errorCode: errorCode,
-                    httpCode: httpCode)
+    @objc public class func endJoinRoom(errorCode: Int, httpCode: Int) {
+        AgoraApaasReportor.apaasShared.endJoinRoom(errorCode: errorCode,
+                                                   httpCode: httpCode)
     }
     
-    public func startJoinRoomSubEventNotificate(subEvent: String) {
-        startJoinRoomSubEvent(subEvent: subEvent)
+    @objc public class func startJoinRoomSubEvent(subEvent: String) {
+        AgoraApaasReportor.apaasShared.startJoinRoomSubEvent(subEvent: subEvent)
     }
     
-    public func endJoinRoomSubEventNotificate(subEvent: String,
-                                              type: AgoraReportEndCategory,
-                                              errorCode: Int,
-                                              api: String?) {
-        endJoinRoomSubEvent(subEvent: subEvent,
-                            type: type,
-                            errorCode: errorCode,
-                            api: api)
+    @objc public class func endJoinRoomSubEvent(subEvent: String,
+                                                type: AgoraReportEndCategory,
+                                                errorCode: Int,
+                                                api: String?) {
+        AgoraApaasReportor.apaasShared.endJoinRoomSubEvent(subEvent: subEvent,
+                                                           type: type,
+                                                           errorCode: errorCode,
+                                                           api: api)
     }
     
-    public func endJoinRoomSubEventNotificate(subEvent: String,
-                                              type: AgoraReportEndCategory,
-                                              errorCode: Int,
-                                              httpCode: Int,
-                                              api: String?) {
-        endJoinRoomSubEvent(subEvent: subEvent,
-                            type: type,
-                            errorCode: errorCode,
-                            httpCode: httpCode,
-                            api: api)
+    @objc public class func endJoinRoomSubEvent(subEvent: String,
+                                                type: AgoraReportEndCategory,
+                                                errorCode: Int,
+                                                httpCode: Int,
+                                                api: String?) {
+        AgoraApaasReportor.apaasShared.endJoinRoomSubEvent(subEvent: subEvent,
+                                                           type: type,
+                                                           errorCode: errorCode,
+                                                           httpCode: httpCode,
+                                                           api: api)
     }
 }

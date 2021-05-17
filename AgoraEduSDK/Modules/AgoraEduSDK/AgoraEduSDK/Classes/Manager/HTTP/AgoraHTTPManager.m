@@ -142,6 +142,43 @@ static NSString *AGORA_EDU_SDK_BASE_URL = @"https://api.agora.io";
     }];
 }
 
++ (void)conversationChatWithConfig:(AgoraRoomChatConfiguration *)config
+                           success:(OnRoomChatSuccessBlock)successBlock
+                           failure:(OnHttpFailureBlock)failureBlock {
+    
+    // @"%@/edu/apps/%@/v2/rooms/%@/conversation/students/%@/messages"
+    
+    NSString *url = [NSString stringWithFormat:HTTP_APP_CONVERSATION_CHAT,
+                                               AGORA_EDU_SDK_BASE_URL,
+                                               config.appId,
+                                               config.roomUuid,
+                                               config.userUuid];
+    
+    NSDictionary *headers = [AgoraHTTPManager headersWithUId:config.userUuid
+                                                   userToken:@""
+                                                       token:config.token];
+
+    NSDictionary *parameters = @{
+        @"message":config.message,
+        @"type":@(config.type)
+    };
+    
+    [AgoraHTTPManager fetchDispatch:HttpTypePost
+                                url:url
+                         parameters:parameters
+                            headers:headers
+                         parseClass:AgoraChatModel.class
+                            success:^(id _Nonnull model) {
+        if(successBlock){
+            successBlock(model);
+        }
+    } failure:^(NSError * _Nonnull error, NSInteger statusCode) {
+        if (failureBlock) {
+            failureBlock(error, statusCode);
+        }
+    }];
+}
+
 + (void)handUpWithConfig:(AgoraHandUpConfiguration *)config
                  success:(OnHandUpSuccessBlock)successBlock
                  failure:(OnHttpFailureBlock)failureBlock {

@@ -279,6 +279,11 @@ private class AgoraButtonListView: AgoraBaseUIScrollView {
             buttonListView.isScrollEnabled = (buttonListViewContentHeight > buttonListViewHeight)
         }
     }
+    
+    // MARK: action
+    @objc func doFoldButtonPressed(_ button: UIButton) {
+        isFold.toggle()
+    }
 }
 
 public extension AgoraBoardToolsView {
@@ -314,12 +319,6 @@ private extension AgoraBoardToolsView {
         popover.delegate = self
         popover.strokeColor = .white
         popover.borderColor = .white
-    }
-}
-
-private extension AgoraBoardToolsView {
-    @objc func doFoldButtonPressed(_ button: UIButton) {
-        isFold.toggle()
     }
 }
 

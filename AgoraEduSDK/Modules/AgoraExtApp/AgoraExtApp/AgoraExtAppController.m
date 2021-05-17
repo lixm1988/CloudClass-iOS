@@ -21,7 +21,7 @@
     self = [super init];
     
     if (self) {
-        self.containerView = [[AgroaExtAppContainer alloc] initWithFrame:CGRectZero];
+        self.containerView = [AgroaExtAppWrapper getView];
         [self.containerView setHidden:YES];
     }
     

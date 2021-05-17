@@ -27,6 +27,7 @@ Pod::Spec.new do |spec|
     source.dependency "AgoraUIEduBaseViews/SOURCE"
     source.dependency "AgoraExtApp"
     source.dependency "AgoraEduContext"
+    source.dependency "AgoraWidget"
   end
 
   spec.subspec 'BINARY' do |binary|

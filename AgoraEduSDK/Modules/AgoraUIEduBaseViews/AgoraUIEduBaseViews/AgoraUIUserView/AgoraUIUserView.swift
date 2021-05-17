@@ -167,6 +167,19 @@ public protocol AgoraUIUserViewDelegate: NSObjectProtocol {
     func setVideoButtonHidden(hidden: Bool) {
         isVideoButtonHidden = hidden
     }
+    
+    // MARK: touch event
+    @objc  func onAudioTouchEvent(_ button: AgoraBaseUIButton) {
+        delegate?.userView(self,
+                           didPressAudioButton: button,
+                           indexOfUserList: index)
+    }
+    
+    @objc func onVideoTouchEvent(_ button: AgoraBaseUIButton) {
+        delegate?.userView(self,
+                           didPressVideoButton: button,
+                           indexOfUserList: index)
+    }
 }
 
 // MARK: - Private
@@ -237,21 +250,6 @@ private extension AgoraUIUserView {
             self.audioEffectView.agora_bottom = self.audioBtn.agora_bottom + self.audioBtn.agora_height + audioEffectGap
             self.audioEffectView.agora_x = self.audioBtn.agora_x + (self.audioBtn.agora_width - v.agora_width) * 0.5
         }
-    }
-}
-
-// MARK: - UIButton Event
-private extension AgoraUIUserView {
-    @objc  func onAudioTouchEvent(_ button: AgoraBaseUIButton) {
-        delegate?.userView(self,
-                           didPressAudioButton: button,
-                           indexOfUserList: index)
-    }
-    
-    @objc func onVideoTouchEvent(_ button: AgoraBaseUIButton) {
-        delegate?.userView(self,
-                           didPressVideoButton: button,
-                           indexOfUserList: index)
     }
 }
 

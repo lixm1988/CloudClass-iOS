@@ -10,6 +10,7 @@
 #import "AgoraRTELogService.h"
 #import "AgoraRTELogService.h"
 #import <AgoraReport/AgoraReport.h>
+#import <AgoraReport/AgoraReport-Swift.h>
 #import <EduSDK/EduSDK-Swift.h>
 
 #define AgoraRTCNoNullString(x) ([x isKindOfClass:NSString.class] ? x : @"")

@@ -34,12 +34,14 @@
 
 @implementation AgoraEduCourseware
 - (instancetype)initWithResourceName:(NSString *)resourceName
+                        resourceUuid:(NSString *)resourceUuid
                            scenePath:(NSString *)scenePath
                               scenes:(NSArray<WhiteScene *> *)scenes
                          resourceUrl:(NSString *)resourceUrl {
     self = [super init];
     if (self) {
         self.resourceName = resourceName;
+        self.resourceUuid = resourceUuid;
         self.scenePath = scenePath;
         self.resourceUrl = resourceUrl;
         self.scenes = scenes;

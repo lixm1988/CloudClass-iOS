@@ -8,7 +8,6 @@
 
 import EduSDK
 import AgoraUIEduBaseViews
-import AgoraEduSDK.AgoraFiles.AgoraManager
 import AgoraEduContext
 
 fileprivate enum AgoraDeviceType: String {
@@ -41,6 +40,17 @@ struct AgoraDeviceStreamState {
     fileprivate var rteStreamStates: [String: AgoraDeviceStreamState] = [:]
     // 白板状态
     fileprivate var usersBoardGranted: [String] = []
+    
+    public func updateUserMuteChat(_ userUuid: String, muteChat: Bool) {
+         
+        if let userInfo = self.kitUserInfos.first(where: {$0.user.userUuid == userUuid} ) {
+            userInfo.enableChat = !muteChat
+        }
+        
+        if let userInfo = self.kitCoHostInfos.first(where: {$0.user.userUuid == userUuid} ) {
+            userInfo.enableChat = !muteChat
+        }
+    }
 
     public func updateUsersBoardGranted(_ userUuids: [String], completeBlock: @escaping () -> Void) {
          
@@ -290,16 +300,13 @@ struct AgoraDeviceStreamState {
         AgoraEduManager.share().roomManager?.getFullUserList(success: {[weak self] (rteUsers) in
             
             var onRteHosts: [AgoraRTEUser] = []
-            var offRteHosts: [AgoraRTEUser] = []
             rteUsers.forEach { (rteUser) in
                 if onCoHosts.contains(rteUser.userUuid) {
                     onRteHosts.append(rteUser)
-                } else if offCoHosts.contains(rteUser.userUuid) {
-                    offRteHosts.append(rteUser)
                 }
             }
             
-            self?.updateKitCoHostList(downHostRteUsers: offRteHosts, upHostRteUsers: onRteHosts, successBlock: {
+            self?.updateKitCoHostList(downHostUserUuids: offCoHosts, upHostRteUsers: onRteHosts, successBlock: {
                 successBlock()
             }, failureBlock: { (error) in
                 failureBlock(error)
@@ -424,12 +431,12 @@ struct AgoraDeviceStreamState {
     }
 
     // MARK: CoHostList
-    fileprivate func updateKitCoHostList(downHostRteUsers: [AgoraRTEUser], upHostRteUsers: [AgoraRTEUser], successBlock: @escaping () -> Void, failureBlock: @escaping (_ error: AgoraEduContextError) -> Void) {
+    fileprivate func updateKitCoHostList(downHostUserUuids: [String], upHostRteUsers: [AgoraRTEUser], successBlock: @escaping () -> Void, failureBlock: @escaping (_ error: AgoraEduContextError) -> Void) {
     
         // userList
-        downHostRteUsers.forEach {[weak self] (rteUser) in
+        downHostUserUuids.forEach {[weak self] (userUuid) in
             if let kitUserInfo = self?.kitUserInfos.first(where: { (kitUserInfo) -> Bool in
-                return rteUser.userUuid == kitUserInfo.user.userUuid
+                return userUuid == kitUserInfo.user.userUuid
             }) {
                 kitUserInfo.coHost = false
             }
@@ -447,11 +454,10 @@ struct AgoraDeviceStreamState {
         
         // userList
         self.kitCoHostInfos.removeAll { (userDetailInfo) -> Bool in
-            let userUuid = userDetailInfo.user.userUuid
+            let coUserUuid = userDetailInfo.user.userUuid
            
-            
-            if let _ = downHostRteUsers.first(where: { (rteUser) -> Bool in
-                return rteUser.userUuid == userUuid
+            if let _ = downHostUserUuids.first(where: { (userUuid) -> Bool in
+                return userUuid == coUserUuid
             }) {
                 return true
             }
@@ -485,24 +491,6 @@ struct AgoraDeviceStreamState {
     }
 
     // MARK: StreamsChanged
-    public func getUpdateScreenStreamInfos(rteStreamEvents: [AgoraRTEStreamEvent]) -> [String:String] {
-        var infos: [String:String] = [:]
-        for rteStreamEvent in rteStreamEvents {
-            if rteStreamEvent.modifiedStream.sourceType == .screen {
-                infos.updateValue(rteStreamEvent.modifiedStream.userInfo.userName, forKey: rteStreamEvent.modifiedStream.streamUuid)
-            }
-        }
-        return infos
-    }
-    public func getUpdateScreenStreamInfos(rteStreams: [AgoraRTEStream]) -> [String:String] {
-        var infos: [String:String] = [:]
-        for rteStream in rteStreams {
-            if rteStream.sourceType == .screen {
-                infos.updateValue(rteStream.userInfo.userName, forKey: rteStream.streamUuid)
-            }
-        }
-        return infos
-    }
     public func updateKitStreams(rteStreamEvents: [AgoraRTEStreamEvent], type: AgoraInfoChangeType, successBlock: @escaping () -> Void, failureBlock: @escaping (_ error: AgoraEduContextError) -> Void) {
         var rteStreams: [AgoraRTEStream] = []
         for rteStreamEvent in rteStreamEvents {
@@ -722,6 +710,7 @@ extension AgoraUserVM {
         kitUserInfo.streamUuid = rteUser.streamUuid
         kitUserInfo.cameraState = self.getUserDeviceState(.camera, rteUser: rteUser)
         kitUserInfo.microState = self.getUserDeviceState(.microphone, rteUser: rteUser)
+        kitUserInfo.enableChat = rteUser.isChatAllowed
         if self.usersBoardGranted.contains(rteUser.userUuid) {
             kitUserInfo.boardGranted = true
         } else {

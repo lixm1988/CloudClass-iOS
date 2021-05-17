@@ -89,7 +89,7 @@ import Foundation
 /// Chat
 @objcMembers public class AgoraEduContextChatInfo: NSObject {
     // 消息Id
-    public var id: Int = 0
+    public var id: String = ""
     // 消息内容
     public var message: String = ""
     // 消息所属人员信息
@@ -146,6 +146,8 @@ import Foundation
     public var enableVideo: Bool = false
     // 流：是否有音频
     public var enableAudio: Bool = false
+    // 是否可以聊天
+    public var enableChat: Bool = true
     // 奖励数量
     public var rewardCount: Int = 0
     
@@ -161,4 +163,10 @@ import Foundation
     case `default`
     case handsUp
     case handsDown
+}
+
+/// ScreenShare
+@objc public enum AgoraEduContextScreenShareState : Int {
+    // 屏幕分享状态：开始、暂停、停止
+    case start, pause, stop
 }

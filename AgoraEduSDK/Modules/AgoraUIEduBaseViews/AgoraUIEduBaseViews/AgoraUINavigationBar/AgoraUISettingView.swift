@@ -188,10 +188,8 @@ import AgoraUIBaseViews
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-}
-
-// MARK: TouchEvent
-extension AgoraUISettingView {
+    
+    // MARK: touch event
     @objc func onTouchSwitch(_ switchBtn: AgoraBaseUISwitch) {
         if switchBtn == self.cameraView.viewWithTag(SwitchTag) {
             self.cameraStateBlock?(switchBtn.isOn)

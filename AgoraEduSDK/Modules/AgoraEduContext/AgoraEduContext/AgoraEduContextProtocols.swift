@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import AgoraWidget
 
 // MARK: - PrivateChat
 @objc public protocol AgoraEduPrivateChatHandler: NSObjectProtocol {
@@ -130,6 +131,7 @@ import UIKit
     // 上课过程中，错误信息
     @objc optional func onShowErrorInfo(_ error: AgoraEduContextError)
 }
+
 @objc public protocol AgoraEduRoomContext: NSObjectProtocol {
     // 离开教室
     func leaveRoom()
@@ -141,30 +143,67 @@ import UIKit
 @objc public protocol AgoraEduMessageHandler: NSObjectProtocol {
     // 收到房间消息
     @objc optional func onAddRoomMessage(_ info: AgoraEduContextChatInfo)
+    // 收到提问消息
+    @objc optional func onAddConversationMessage(_ info: AgoraEduContextChatInfo)
     // 收到聊天权限变化
     @objc optional func onUpdateChatPermission(_ allow: Bool)
+    @objc optional func onUpdateLocalChatPermission(_ allow: Bool,
+                                                    toUser: AgoraEduContextUserInfo,
+                                                    operatorUser: AgoraEduContextUserInfo)
+    @objc optional func onUpdateRemoteChatPermission(_ allow: Bool,
+                                                    toUser: AgoraEduContextUserInfo,
+                                                    operatorUser: AgoraEduContextUserInfo)
     // 本地发送消息结果（包含首次和后面重发），如果error不为空，代表失败
-    @objc optional func onSendRoomMessageResult(_ error: AgoraEduContextError?, info: AgoraEduContextChatInfo?)
+    @objc optional func onSendRoomMessageResult(_ error: AgoraEduContextError?,
+                                                info: AgoraEduContextChatInfo?)
+    // 本地发送提问消息结果（包含首次和后面重发），如果error不为空，代表失败
+    @objc optional func onSendConversationMessageResult(_ error: AgoraEduContextError?,
+                                                        info: AgoraEduContextChatInfo?)
+    
     // 查询历史消息结果，如果error不为空，代表失败
-    @objc optional func onFetchHistoryMessagesResult(_ error: AgoraEduContextError?, list: [AgoraEduContextChatInfo]?)
+    @objc optional func onFetchHistoryMessagesResult(_ error: AgoraEduContextError?,
+                                                     list: [AgoraEduContextChatInfo]?)
+
+    @objc optional func onFetchConversationHistoryMessagesResult(_ error: AgoraEduContextError?,
+                                                                 list: [AgoraEduContextChatInfo]?)
+    
     /* 显示聊天过程中提示信息
      * 禁言模式开启
      * 禁言模式关闭
      */
     @objc optional func onShowChatTips(_ message: String)
 }
+
 @objc public protocol AgoraEduMessageContext: NSObjectProtocol {
     // 发送房间信息
     func sendRoomMessage(_ message: String)
+    // 发送提问信息
+    func sendConversationMessage(_ message: String)
     /* 重发房间信息
      * messageId: AgoraEduContextChatInfo内id
      */
-    func resendRoomMessage(_ message: String, messageId: Int)
+    func resendRoomMessage(_ message: String,
+                           messageId: String)
+    
+    /* 重发提问信息
+     * messageId: AgoraEduContextChatInfo内id
+     */
+    func resendConversationMessage(_ message: String,
+                                   messageId: String)
     /* 获取历史消息
      * startId: 从哪个开始获取，AgoraEduContextChatInfo内id
      * count: 要获取多少条数据
      */
-    func fetchHistoryMessages(_ startId: Int, count: Int)
+    func fetchHistoryMessages(_ startId: String,
+                              count: Int)
+    
+    /* 获取提问历史消息
+     * startId: 从哪个开始获取，AgoraEduContextChatInfo内id
+     * count: 要获取多少条数据
+     */
+    func fetchConversationHistoryMessages(_ startId: String,
+                                          count: Int)
+    
     // 事件监听
     func registerEventHandler(_ handler: AgoraEduMessageHandler)
 }
@@ -232,16 +271,27 @@ import UIKit
 // MARK: - ScreenShare
 @objc public protocol AgoraEduScreenShareHandler: NSObjectProtocol {
     // 开启或者关闭屏幕分享
-    @objc optional func onUpdateScreenShareState(_ sharing: Bool,
+    @objc optional func onUpdateScreenShareState(_ state: AgoraEduContextScreenShareState,
                                                streamUuid: String)
 
+    // 切换屏幕课件Tab
+    @objc optional func onSelectScreenShare(_ selected: Bool)
+    
     /* 屏幕分享相关消息
      * XXX开启了屏幕分享
      * XXX关闭了屏幕分享
      */
     @objc optional func onShowScreenShareTips(_ message: String)
 }
+
 @objc public protocol AgoraEduScreenShareContext: NSObjectProtocol {
     // 事件监听
     func registerEventHandler(_ handler: AgoraEduScreenShareHandler)
+}
+
+@objc public protocol AgoraEduWidgetContext {
+    func createWidget(info: AgoraWidgetInfo,
+                      contextPool: AgoraEduContextPool) -> AgoraEduWidget
+    
+    func getWidgetInfos() -> [AgoraWidgetInfo]?
 }

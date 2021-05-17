@@ -8,8 +8,8 @@
 
 import EduSDK
 import AgoraUIEduBaseViews
-import AgoraEduSDK.AgoraFiles.AgoraManager
 import AgoraEduContext
+import AgoraEduSDK.AgoraEduSDKFiles
 
 @objcMembers public class AgoraRoomVM: AgoraBaseVM {
     
@@ -149,31 +149,32 @@ extension AgoraRoomVM {
     fileprivate func updateTime(successBlock: (() -> Void)? = nil, failureBlock: ((_ error: AgoraEduContextError) -> Void)? = nil) {
         
         AgoraEduManager.share().roomManager?.getClassroomInfo(success: {[weak self] (room) in
-            guard let `self` = self else {
+            guard let `self` = self, let roomStateInfoModel = AgoraManagerCache.share().roomStateInfoModel as? AgoraRoomStateInfoModel else {
                 return
             }
             
-            AgoraManagerCache.share().roomStateInfoModel.state = room.roomState.courseState.rawValue
-            let state = AgoraRTECourseState(rawValue: AgoraManagerCache.share().roomStateInfoModel.state)
-            let closeDelay = AgoraManagerCache.share().roomStateInfoModel.closeDelay
+            roomStateInfoModel.state = room.roomState.courseState.rawValue
+            let state = AgoraRTECourseState(rawValue: roomStateInfoModel.state)
+            let closeDelay = roomStateInfoModel.closeDelay
             
             let interval = Date().timeIntervalSince1970 * 1000
-            let currentRealTime = Int(interval - Double(AgoraManagerCache.share().differTime))
-            let model = AgoraManagerCache.share().roomStateInfoModel
+            let currentRealTime = Int64(interval - Double(AgoraManagerCache.share().differTime))
+
+            let startTime = Int64(roomStateInfoModel.startTime)
             
             var time: Int = 0
             if state == AgoraRTECourseState.default {
-                time = Int(Double((model.startTime - currentRealTime)) * 0.001)
+                time = Int(Double((startTime - currentRealTime)) * 0.001)
                 if time < 0 {
                     time = 0
                 }
             } else if state == AgoraRTECourseState.start {
-                time = Int(Double((currentRealTime - model.startTime)) * 0.001)
+                time = Int(Double((currentRealTime - startTime)) * 0.001)
                 if time < 0 {
                     time = 0
                 }
                 
-                if model.duration - time == 5 * 60 {
+                if roomStateInfoModel.duration - time == 5 * 60 {
                     // 5分钟
                     let strStart = self.localizedString("ClassEndWarningStartText")
                     let strMidden = "5"
@@ -184,12 +185,12 @@ extension AgoraRoomVM {
                 }
             } else if state == AgoraRTECourseState.stop {
                 
-                time = Int(Double((currentRealTime - model.startTime)) * 0.001)
+                time = Int(Double((currentRealTime - startTime)) * 0.001)
                 if time < 0 {
                     time = 0
                 }
                 
-                let countdown = closeDelay + AgoraManagerCache.share().roomStateInfoModel.duration - time
+                let countdown = closeDelay + roomStateInfoModel.duration - time
                 
                 if countdown == 60 {
                     let strStart = self.localizedString("ClassCloseWarningStart2Text")

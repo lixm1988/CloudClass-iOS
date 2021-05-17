@@ -49,7 +49,7 @@ static NSString *AGORA_EDU_BASE_URL = @"https://api.agora.io/scene";
     AGORA_EDU_BASE_URL = url;
     
     if ([baseURL containsString:@"dev"]) {
-        AgoraRteReportor.rteShared.BASE_URL = @"http://api-test.agora.io";
+        [AgoraRteReportorWrapper getRteReporter].BASE_URL = @"http://api-test.agora.io";
     }
 }
 
@@ -90,7 +90,7 @@ static NSString *AGORA_EDU_BASE_URL = @"https://api.agora.io/scene";
                                                                          version:AgoraRTEManager.version
                                                                            token:config.token
                                                                         userUuid:config.userUuid];
-    [[AgoraRteReportor rteShared] setWithContext:context];
+    [[AgoraRteReportorWrapper getRteReporter] setWithContext:context];
     
     if (self = [super init]) {
         self.appId = AgoraRTENoNullString(config.appId);
@@ -146,7 +146,7 @@ static NSString *AGORA_EDU_BASE_URL = @"https://api.agora.io/scene";
     AgoraRTMManager.shareManager.connectDelegate = self;
     
     // Report
-    [[AgoraRteReportor rteShared] startLogin];
+    [AgoraRteReportorWrapper startLogin];
     
     AgoraRTEWEAK(self);
     [AgoraRTMManager.shareManager initSignalWithAppid:self.appId appToken:AgoraRTENoNullString(rtmToken) userId:userUuid completeSuccessBlock:^{
@@ -158,7 +158,7 @@ static NSString *AGORA_EDU_BASE_URL = @"https://api.agora.io/scene";
         }
         
         // Report
-        [[AgoraRteReportor rteShared] endLoginWithErrorCode:0];
+        [AgoraRteReportorWrapper endLoginWithErrorCode:0];
     } completeFailBlock:^(NSInteger errorCode) {
         NSError *error = [AgoraRTEErrorManager communicationError:errorCode code:101];
         if (failureBlock != nil) {
@@ -166,7 +166,7 @@ static NSString *AGORA_EDU_BASE_URL = @"https://api.agora.io/scene";
         }
         
         // Report
-        [[AgoraRteReportor rteShared] endLoginWithErrorCode:errorCode];
+        [AgoraRteReportorWrapper endLoginWithErrorCode:errorCode];
     }];
 }
 
