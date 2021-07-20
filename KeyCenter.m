@@ -14,15 +14,18 @@
 }
 
 + (NSString *)publishDate {
-    return @"2021.07.12";
+    return @"2021.07.19";
 }
 
 + (NSString *)appId {
-    return <#Your Agora AppID#>;
+    return @"f488493d1886435f963dfb3d95984fd4";
 }
 
 + (NSString *)appCertificate {
-    return <#Your Agora Certificate#>;
+    return @"1560d3b87dd040b1bfe9cb506cbeeaed";
 }
 
++ (NSString *)hostURL {
+    return @"http://api-solutions-dev.bj2.agoralab.co";
+}
 @end

@@ -98,6 +98,22 @@ static BOOL isSDKInited = NO;
     self.latestMsgId = @"";
 }
 
+- (NSMutableArray*)members
+{
+    if(_members) {
+        _members = [NSMutableArray array];
+    }
+    return _members;
+}
+
+- (NSMutableArray*)admins
+{
+    if(_admins) {
+        _admins = [NSMutableArray array];
+    }
+    return _admins;
+}
+
 - (void)setIsLogin:(BOOL)isLogin
 {
     _isLogin = isLogin;
@@ -157,15 +173,30 @@ static BOOL isSDKInited = NO;
                     }
                     return;
                 }else{
-                    [self.dataArray insertObject:msg atIndex:0];
+                    NSDictionary* ext  = msg.ext;
+                    NSNumber* msgType = [ext objectForKey:kMsgType];
+                    if(msgType && msgType.integerValue > 1) {
+                        [self.askAndAnswerMsgs insertObject:msg atIndex:0];
+                    }else
+                        [self.dataArray insertObject:msg atIndex:0];
                 }
             }
         }else{
-            [weakself.dataArray addObjectsFromArray:result.list];
+            for(EMMessage* msg in result.list) {
+                NSDictionary* ext  = msg.ext;
+                NSNumber* msgType = [ext objectForKey:kMsgType];
+                if(msgType && msgType.integerValue > 1) {
+                    [self.askAndAnswerMsgs addObject:msg];
+                }else
+                    [self.dataArray addObject:msg];
+            }
             EMMessage* lastMsg = [result.list lastObject];
             if(lastMsg)
                 self.latestMsgId = lastMsg.messageId;
-            [weakself.delegate chatMessageDidReceive];
+            if(self.dataArray.count > 0)
+                [weakself.delegate chatMessageDidReceive];
+            if(self.askAndAnswerMsgs.count > 0)
+                [weakself.delegate qaMessageDidReceive];
         }
     }
     // 获取是否被禁言
@@ -199,6 +230,15 @@ static BOOL isSDKInited = NO;
     NSArray<EMMessage*> * array = [self.dataArray copy];
     [self.dataArray removeAllObjects];
     [self.dataLock unlock];
+    return array;
+}
+
+- (NSArray<EMMessage*> *)qaArray
+{
+    [self.askAndAnswerMsgLock lock];
+    NSArray<EMMessage*> * array = [self.askAndAnswerMsgs copy];
+    [self.askAndAnswerMsgs removeAllObjects];
+    [self.askAndAnswerMsgLock unlock];
     return array;
 }
 
@@ -275,6 +315,7 @@ static BOOL isSDKInited = NO;
                             [weakself.askAndAnswerMsgLock lock];
                             [weakself.askAndAnswerMsgs addObject:message];
                             [weakself.askAndAnswerMsgLock unlock];
+                            [weakself.delegate qaMessageDidReceive];
                         }
                     }else{
                         if(error.code == EMErrorMessageIncludeIllegalContent)
@@ -359,7 +400,7 @@ static BOOL isSDKInited = NO;
                 NSNumber* msgType = [ext objectForKey:kMsgType];
                 EMTextMessageBody* textBody = (EMTextMessageBody*)msg.body;
                 // 普通消息
-                //if(msgType.integerValue == ChatMsgTypeCommon) {
+                if(msgType.integerValue == ChatMsgTypeCommon) {
                     if([textBody.text length] > 0)
                     {
                         NSString* avatarUrl = [ext objectForKey:kAvatarUrl];
@@ -369,16 +410,16 @@ static BOOL isSDKInited = NO;
                         [self.dataLock unlock];
                         aInsertCommonMsg = YES;
                     }
-               // }
-//                // 问答消息
-//                if(msgType.integerValue == ChatMsgAnswer) {
-//                    NSString* asker = [ext objectForKey:@"asker"];
-//                    if([asker isEqualToString:self.user.username]) {
-//                        [self.askAndAnswerMsgLock lock];
-//                        [self.askAndAnswerMsgs addObject:msg];
-//                        [self.askAndAnswerMsgLock unlock];
-//                    }
-//                }
+                }
+                // 问答消息
+                if(msgType.integerValue == ChatMsgAnswer) {
+                    NSString* asker = [ext objectForKey:@"asker"];
+                    if([asker isEqualToString:self.user.username]) {
+                        [self.askAndAnswerMsgLock lock];
+                        [self.askAndAnswerMsgs addObject:msg];
+                        [self.askAndAnswerMsgLock unlock];
+                    }
+                }
             }
         }
     }
@@ -386,6 +427,11 @@ static BOOL isSDKInited = NO;
         // 这里需要读取消息展示
         if([self.delegate respondsToSelector:@selector(chatMessageDidReceive)]) {
             [self.delegate chatMessageDidReceive];
+        }
+    }
+    if(self.askAndAnswerMsgs.count > 0) {
+        if([self.delegate respondsToSelector:@selector(qaMessageDidReceive)]) {
+            [self.delegate qaMessageDidReceive];
         }
     }
 }
@@ -458,13 +504,33 @@ static BOOL isSDKInited = NO;
 - (void)userDidJoinChatroom:(EMChatroom *)aChatroom
                        user:(NSString *)aUsername
 {
-    
+    if(![self.members containsObject:aUsername]) {
+        [self.members addObject:aUsername];
+    }
 }
 
 - (void)userDidLeaveChatroom:(EMChatroom *)aChatroom
                         user:(NSString *)aUsername
 {
-    
+    if([self.members containsObject:aUsername]) {
+        [self.members removeObject:aUsername];
+    }
+}
+
+- (void)chatroomAdminListDidUpdate:(EMChatroom *)aChatroom
+                        addedAdmin:(NSString *)aAdmin
+{
+    if(![self.admins containsObject:aAdmin]) {
+        [self.admins addObject:aAdmin];
+    }
+}
+
+- (void)chatroomAdminListDidUpdate:(EMChatroom *)aChatroom
+                        removedAdmin:(NSString *)aAdmin
+{
+    if([self.admins containsObject:aAdmin]) {
+        [self.admins removeObject:aAdmin];
+    }
 }
 
 - (void)didDismissFromChatroom:(EMChatroom *)aChatroom

@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSString *)appCertificate;
 + (NSString *)rtcVersion;
 + (NSString *)publishDate;
++ (NSString *)hostURL;
 @end
 
 NS_ASSUME_NONNULL_END

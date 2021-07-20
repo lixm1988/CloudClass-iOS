@@ -10,13 +10,19 @@
 #import <Masonry/Masonry.h>
 #import "ChatWidget+Localizable.h"
 const static NSInteger TAG_BASE = 1000;
+#define PERCENT 0.25
 
 @interface ChatTopView ()
 @property (nonatomic,strong) UIButton* chatButton;
 @property (nonatomic,strong) UIButton* hideButton;
+@property (nonatomic,strong) UIButton* qaButton;
+@property (nonatomic,strong) UIButton* membersButton;
 @property (nonatomic,strong) UIButton* announcementButton;
 @property (nonatomic,strong) UIView* tabView;
 @property (nonatomic,strong) UIView* selLine;
+@property (nonatomic) NSUInteger tabCount;
+@property (nonatomic,strong) UIColor* selTitleColor;
+@property (nonatomic,strong) UIColor* unselTitleColor;
 @end
 
 @implementation ChatTopView
@@ -69,7 +75,7 @@ const static NSInteger TAG_BASE = 1000;
     
     self.chatButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.chatButton setTitle:[ChatWidget LocalizedString:@"ChatText"] forState:UIControlStateNormal];
-    [self.chatButton setTitleColor:[UIColor colorWithRed:25/255.0 green:25/255.0 blue:25/255.0 alpha:1.0] forState:UIControlStateNormal];
+    [self.chatButton setTitleColor:self.selTitleColor forState:UIControlStateNormal];
     self.chatButton.tag = TAG_BASE;
     [self.chatButton addTarget:self action:@selector(clickAction:) forControlEvents:UIControlEventTouchUpInside];
     [self.tabView addSubview:self.chatButton];
@@ -77,29 +83,64 @@ const static NSInteger TAG_BASE = 1000;
         make.left.equalTo(self);
         make.top.equalTo(self.tabView);
         make.height.equalTo(self.tabView);
-        make.width.equalTo(self.tabView).multipliedBy(0.5);
+        make.width.equalTo(self.tabView).multipliedBy(PERCENT);
     }];
     
-    self.badgeView = [[CustomBadgeView alloc] init];
-    [self addSubview:self.badgeView];
-    self.badgeView.hidden = YES;
-    [self.badgeView mas_makeConstraints:^(MASConstraintMaker *make) {
+    self.chatBadgeView = [[CustomBadgeView alloc] init];
+    [self addSubview:self.chatBadgeView];
+    self.chatBadgeView.hidden = YES;
+    [self.chatBadgeView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self).offset(10);
-        make.width.height.equalTo(@(self.badgeView.badgeSize));
+        make.width.height.equalTo(@(self.chatBadgeView.badgeSize));
         make.centerX.equalTo(self.chatButton).offset(20);
+    }];
+    
+    self.qaButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.qaButton setTitle:[ChatWidget LocalizedString:@"ChatQA"] forState:UIControlStateNormal];
+    [self.qaButton setTitleColor:self.unselTitleColor forState:UIControlStateNormal];
+    self.qaButton.tag = TAG_BASE + 1;
+    [self.qaButton addTarget:self action:@selector(clickAction:) forControlEvents:UIControlEventTouchUpInside];
+    [self.tabView addSubview:self.qaButton];
+    [self.qaButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.chatButton.mas_right);
+        make.top.equalTo(self.tabView);
+        make.height.equalTo(self.tabView);
+        make.width.equalTo(self.tabView).multipliedBy(PERCENT);
+    }];
+    
+    self.qaBadgeView = [[CustomBadgeView alloc] init];
+    [self addSubview:self.qaBadgeView];
+    self.qaBadgeView.hidden = YES;
+    [self.qaBadgeView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self).offset(10);
+        make.width.height.equalTo(@(self.chatBadgeView.badgeSize));
+        make.centerX.equalTo(self.qaButton).offset(20);
+    }];
+    
+    self.membersButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.membersButton setTitle:[ChatWidget LocalizedString:@"ChatMembers"] forState:UIControlStateNormal];
+    [self.membersButton setTitleColor:self.unselTitleColor forState:UIControlStateNormal];
+    self.membersButton.tag = TAG_BASE + 2;
+    [self.membersButton addTarget:self action:@selector(clickAction:) forControlEvents:UIControlEventTouchUpInside];
+    [self.tabView addSubview:self.membersButton];
+    [self.membersButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.qaButton.mas_right);
+        make.top.equalTo(self.tabView);
+        make.height.equalTo(self.tabView);
+        make.width.equalTo(self.tabView).multipliedBy(PERCENT);
     }];
     
     self.announcementButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.announcementButton setTitle:[ChatWidget LocalizedString:@"ChatAnnouncement"] forState:UIControlStateNormal];
-    self.announcementButton.tag = TAG_BASE + 1;
+    self.announcementButton.tag = TAG_BASE + 3;
     [self.announcementButton addTarget:self action:@selector(clickAction:) forControlEvents:UIControlEventTouchUpInside];
     [self.announcementButton setTitleColor:[UIColor colorWithRed:123/255.0 green:136/255.0 blue:160/255.0 alpha:1.0] forState:UIControlStateNormal];
     [self.tabView addSubview:self.announcementButton];
     [self.announcementButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.chatButton.mas_right);
+        make.left.equalTo(self.membersButton.mas_right);
         make.top.equalTo(self.tabView);
         make.height.equalTo(self.tabView);
-        make.width.equalTo(self.tabView).multipliedBy(0.5);
+        make.width.equalTo(self.tabView).multipliedBy(PERCENT);
     }];
     
     self.selLine = [[UIView alloc] init];
@@ -110,11 +151,16 @@ const static NSInteger TAG_BASE = 1000;
         make.left.equalTo(self.tabView);
         make.bottom.equalTo(self.tabView);
         make.height.equalTo(@2);
-        make.width.equalTo(self.tabView).multipliedBy(0.5);
+        make.width.equalTo(self.tabView).multipliedBy(PERCENT);
     }];
     
     self.currentTab = 0;
     [self noticeSelectedTab];
+}
+
+- (NSUInteger)tabCount
+{
+    return 4;
 }
 
 - (void)clickAction:(UIButton*)button
@@ -129,29 +175,49 @@ const static NSInteger TAG_BASE = 1000;
     }
 }
 
+- (UIColor*)selTitleColor
+{
+    return [UIColor colorWithRed:25/255.0 green:25/255.0 blue:25/255.0 alpha:1.0];
+}
+
+- (UIColor*)unselTitleColor
+{
+    return [UIColor colorWithRed:123/255.0 green:136/255.0 blue:160/255.0 alpha:1.0];
+}
+
+- (void)setSelectButton:(UIButton*)button
+{
+    [self.selLine mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(button);
+        make.bottom.equalTo(self.tabView);
+        make.height.equalTo(@2);
+        make.width.equalTo(self.tabView).multipliedBy(PERCENT);
+    }];
+    [self.chatButton setTitleColor:button == self.chatButton?self.selTitleColor:self.unselTitleColor forState:UIControlStateNormal];
+    [self.qaButton setTitleColor:button == self.qaButton?self.selTitleColor:self.unselTitleColor forState:UIControlStateNormal];
+    [self.membersButton setTitleColor:button == self.membersButton?self.selTitleColor:self.unselTitleColor forState:UIControlStateNormal];
+    [self.announcementButton setTitleColor:button == self.announcementButton?self.selTitleColor:self.unselTitleColor forState:UIControlStateNormal];
+}
+
 - (void)setCurrentTab:(NSInteger)currentTab
 {
     if(_currentTab != currentTab) {
         _currentTab = currentTab;
-        if(_currentTab == 0) {
-            self.isShowRedNotice = NO;
-            [self.selLine mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.left.equalTo(self.chatButton);
-                make.bottom.equalTo(self.tabView);
-                make.height.equalTo(@2);
-                make.width.equalTo(self.tabView).multipliedBy(0.5);
-            }];
-            [self.chatButton setTitleColor:[UIColor colorWithRed:25/255.0 green:25/255.0 blue:25/255.0 alpha:1.0] forState:UIControlStateNormal];
-            [self.announcementButton setTitleColor:[UIColor colorWithRed:123/255.0 green:136/255.0 blue:160/255.0 alpha:1.0] forState:UIControlStateNormal];
-        }else{
-            [self.selLine mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.left.equalTo(self.announcementButton);
-                make.bottom.equalTo(self.tabView);
-                make.height.equalTo(@2);
-                make.width.equalTo(self.tabView).multipliedBy(0.5);
-            }];
-            [self.announcementButton setTitleColor:[UIColor colorWithRed:25/255.0 green:25/255.0 blue:25/255.0 alpha:1.0] forState:UIControlStateNormal];
-            [self.chatButton setTitleColor:[UIColor colorWithRed:123/255.0 green:136/255.0 blue:160/255.0 alpha:1.0] forState:UIControlStateNormal];
+        switch (currentTab) {
+            case 0:
+                [self setSelectButton:self.chatButton];
+                break;
+            case 1:
+                [self setSelectButton:self.qaButton];
+                break;
+            case 2:
+                [self setSelectButton:self.membersButton];
+                break;
+            case 3:
+                [self setSelectButton:self.announcementButton];
+                break;
+            default:
+                break;
         }
         [self noticeSelectedTab];
     }
@@ -168,9 +234,9 @@ const static NSInteger TAG_BASE = 1000;
 {
     _isShowRedNotice = isShowRedNotice;
     if(isShowRedNotice){
-        self.badgeView.hidden = NO;
+        self.chatBadgeView.hidden = NO;
     }else{
-        self.badgeView.hidden = YES;
+        self.chatBadgeView.hidden = YES;
     }
 }
 

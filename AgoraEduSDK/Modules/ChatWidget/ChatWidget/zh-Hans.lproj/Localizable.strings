@@ -7,7 +7,10 @@
 */
 
 ChatText = "聊天";
+ChatQA = "问答";
 ChatAnnouncement= "公告";
+ChatMembers= "成员";
+ChatSearch= "搜索";
 ChatEmptyText = "还没有消息";
 ChatPlaceholderText = "请输入消息";
 ChatNoAnnouncement = "暂无公告";

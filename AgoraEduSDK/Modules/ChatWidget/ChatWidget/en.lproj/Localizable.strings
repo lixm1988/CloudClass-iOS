@@ -7,7 +7,10 @@
 */
 
 ChatText = "Chat";
+ChatQA = "Q&A";
 ChatAnnouncement = "Notice";
+ChatMembers= "Members";
+ChatSearch= "Search";
 ChatEmptyText = "No Message";
 ChatPlaceholderText = "Input";
 ChatNoAnnouncement = "No Notice";

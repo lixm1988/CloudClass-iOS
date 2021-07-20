@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 // 需要展示接收消息
 - (void)chatMessageDidReceive;
+// 需要展示提问消息
+- (void)qaMessageDidReceive;
 // 需要展示发送消息
 - (void)chatMessageDidSend:(EMMessage*)aMessage;
 // 发生异常
@@ -45,10 +47,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)logout;
 // 发送普通聊天消息
 - (void)sendCommonTextMsg:(NSString*)aText;
+// 发送提问消息
+- (void)sendAskMsgText:(NSString*)aText;
 // 获取用户配置
 - (ChatUserConfig*)userConfig;
 // 接收的消息
 - (NSArray<EMMessage*> *)msgArray;
+// 接收的消息
+- (NSArray<EMMessage*> *)qaArray;
 // 更新头像
 - (void)updateAvatar:(NSString*)avatarUrl;
 // 更新昵称
@@ -60,6 +66,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) NSString* chatroomAnnouncement;
 @property (nonatomic,weak) id<ChatManagerDelegate> delegate;
 @property (nonatomic) ChatRoomState state;
+@property (nonatomic,strong) NSMutableArray* admins;
+@property (nonatomic,strong) NSMutableArray* members;
 @end
 
 NS_ASSUME_NONNULL_END

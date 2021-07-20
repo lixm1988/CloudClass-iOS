@@ -15,6 +15,8 @@
 #import "AnnouncementView.h"
 #import "ChatView.h"
 #import "CustomBadgeView.h"
+#import "MsgView.h"
+#import "MembersView.h"
 
 static const NSString* kAvatarUrl = @"avatarUrl";
 static const NSString* kNickname = @"nickName";
@@ -32,6 +34,8 @@ static const NSString* kChatRoomId = @"chatroomId";
 @property (nonatomic,strong) ChatTopView* chatTopView;
 @property (nonatomic,strong) AnnouncementView* announcementView;
 @property (nonatomic,strong) ChatView* chatView;
+@property (nonatomic,strong) MsgView* qaView;
+@property (nonatomic,strong) MembersView* membersView;
 @property (nonatomic,strong) AgoraBaseUIContainer* containView;
 @property (nonatomic,strong) UITapGestureRecognizer *tap;
 @property (nonatomic,strong) UIButton* miniButton;
@@ -82,6 +86,11 @@ static const NSString* kChatRoomId = @"chatroomId";
     self.chatView.delegate = self;
     [self.containView addSubview:self.chatView];
     
+    self.qaView = [[MsgView alloc] initWithFrame:CGRectZero];
+    self.qaView.delegate = self;
+    
+    self.membersView = [[MembersView alloc] initWithFrame:CGRectZero];
+    
     self.tap = [[UITapGestureRecognizer alloc] initWithTarget:self
                                                        action:@selector(handleTapAction:)];
     [self.containView addGestureRecognizer:self.tap];
@@ -113,6 +122,10 @@ static const NSString* kChatRoomId = @"chatroomId";
     self.announcementView.frame = CGRectMake(0,TOP_HEIGHT,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
     
     self.chatView.frame = CGRectMake(0,TOP_HEIGHT,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
+    
+    self.qaView.frame = CGRectMake(0,TOP_HEIGHT,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
+    
+    self.membersView.frame = CGRectMake(0,TOP_HEIGHT,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
     
     self.miniButton.frame = CGRectMake(10, self.containerView.bounds.size.height - MINIBUTTON_SIZE - 10, MINIBUTTON_SIZE, MINIBUTTON_SIZE);
     
@@ -163,6 +176,26 @@ static const NSString* kChatRoomId = @"chatroomId";
     dispatch_async(dispatch_get_main_queue(), ^{
         NSArray<EMMessage*>* array = [weakself.chatManager msgArray];
         [self.chatView updateMsgs:array];
+        if(array.count > 0) {
+            if([self.containView isHidden]) {
+                // 最小化了
+                self.badgeView.hidden = NO;
+            }
+            if(self.chatTopView.currentTab != 0) {
+                // 显示红点
+                self.chatTopView.isShowRedNotice = YES;
+            }
+        }
+    });
+    
+}
+
+- (void)qaMessageDidReceive
+{
+    __weak typeof(self) weakself = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSArray<EMMessage*>* array = [weakself.chatManager qaArray];
+        [self.qaView updateMsgs:array];
         if(array.count > 0) {
             if([self.containView isHidden]) {
                 // 最小化了
@@ -243,12 +276,34 @@ static const NSString* kChatRoomId = @"chatroomId";
 #pragma mark - ChatTopViewDelegate
 - (void)chatTopViewDidSelectedChanged:(NSUInteger)nSelected
 {
-    if(nSelected == 0){
-        [self.announcementView removeFromSuperview];
-        [self.containView addSubview:self.chatView];
-    }else{
-        [self.chatView removeFromSuperview];
-        [self.containView addSubview:self.announcementView];
+    switch (nSelected) {
+        case 0:
+            [self.announcementView removeFromSuperview];
+            [self.qaView removeFromSuperview];
+            [self.membersView removeFromSuperview];
+            [self.containView addSubview:self.chatView];
+            break;
+        case 1:
+            [self.announcementView removeFromSuperview];
+            [self.chatView removeFromSuperview];
+            [self.membersView removeFromSuperview];
+            [self.containView addSubview:self.qaView];
+            break;
+        case 2:
+            [self.announcementView removeFromSuperview];
+            [self.qaView removeFromSuperview];
+            [self.chatView removeFromSuperview];
+            [self.containView addSubview:self.membersView];
+            break;
+        case 3:
+            [self.chatView removeFromSuperview];
+            [self.qaView removeFromSuperview];
+            [self.membersView removeFromSuperview];
+            [self.containView addSubview:self.announcementView];
+            break;
+            
+        default:
+            break;
     }
 }
 
@@ -256,7 +311,7 @@ static const NSString* kChatRoomId = @"chatroomId";
 {
     self.containView.hidden = YES;
     self.miniButton.hidden = NO;
-    self.badgeView.hidden = self.chatTopView.badgeView.hidden;
+    self.badgeView.hidden = self.chatTopView.chatBadgeView.hidden;
     self.containerView.agora_width = 50;
     [self sendMessage:@"min"];
 }
@@ -266,7 +321,7 @@ static const NSString* kChatRoomId = @"chatroomId";
     self.containView.hidden = NO;
     self.miniButton.hidden = YES;
     if(self.chatTopView.currentTab != 0)
-        self.chatTopView.badgeView.hidden = self.badgeView.hidden;
+        self.chatTopView.chatBadgeView.hidden = self.badgeView.hidden;
     else
     {
         [self.chatView scrollToBottomRow];
@@ -289,5 +344,10 @@ static const NSString* kChatRoomId = @"chatroomId";
 - (void)msgWillSend:(NSString *)aMsgText
 {
     [self.chatManager sendCommonTextMsg:aMsgText];
+}
+
+- (void)msgWillSend:(NSString *)aMsgText type:(ChatMsgType)aMsgType
+{
+    [self.chatManager sendAskMsgText:aMsgText];
 }
 @end
