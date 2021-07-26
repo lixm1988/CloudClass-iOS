@@ -21,6 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface ChatTopView : UIView
 @property (nonatomic,weak) id<ChatTopViewDelegate> delegate;
 @property (nonatomic) BOOL isShowRedNotice;
+@property (nonatomic) BOOL isShowQARedNotice;
 @property (nonatomic) NSInteger currentTab;
 @property (nonatomic,strong) CustomBadgeView* chatBadgeView;
 @property (nonatomic,strong) CustomBadgeView* qaBadgeView;

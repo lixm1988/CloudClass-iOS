@@ -9,6 +9,7 @@
 #import "ChatWidget+Localizable.h"
 #import <Masonry/Masonry.h>
 #import "UIImage+ChatExt.h"
+#import "EMMemberCell.h"
 
 @interface MembersView ()<UITableViewDelegate,UITableViewDataSource>
 @property (nonatomic,strong) UITextField* searchField;
@@ -60,7 +61,15 @@
         make.centerX.equalTo(self);
         make.top.equalTo(self).offset(3.5);
         make.width.equalTo(self).offset(-12);
-        make.height.equalTo(@12);
+        make.height.equalTo(@24);
+    }];
+    
+    [self addSubview:self.tableView];
+    [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self);
+        make.right.equalTo(self);
+        make.top.equalTo(self.searchField.mas_bottom).offset(5);
+        make.bottom.equalTo(self);
     }];
 }
 
@@ -70,10 +79,62 @@
         _tableView = [[UITableView alloc] init];
         _tableView.delegate = self;
         _tableView.dataSource = self;
-        _tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
+        _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     }
     
     return _tableView;
+}
+
+- (NSMutableArray*)admins
+{
+    if(!_admins) {
+        _admins = [NSMutableArray array];
+    }
+    return _admins;
+}
+
+- (NSMutableArray*)members
+{
+    if(!_members) {
+        _members = [NSMutableArray array];
+    }
+    return _members;
+}
+
+#pragma mark - UITableViewDelegate
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return [self.admins count] + [self.members count];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    EMMemberCell *cell = (EMMemberCell*)[tableView dequeueReusableCellWithIdentifier:@"EMMemberCell"];
+    // Configure the cell...
+    if (cell == nil) {
+        //cell =[[EMMemberCell alloc] initWithUid:];
+        int col = indexPath.row;
+        if(col >= self.admins.count && col < (self.admins.count+self.members.count)) {
+            NSString* uid = [self.members objectAtIndex:(col - self.admins.count)];
+            if(uid.length)
+                cell = [[EMMemberCell alloc] initWithUid:uid];
+        }else{
+            NSString* uid = [self.admins objectAtIndex:col];
+            if(uid.length)
+                cell = [[EMMemberCell alloc] initWithUid:uid];
+        }
+    }
+    return cell;
+}
+
+- (void)update
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.tableView reloadData];
+    });
 }
 
 @end

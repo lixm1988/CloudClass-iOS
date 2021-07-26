@@ -100,7 +100,7 @@ static BOOL isSDKInited = NO;
 
 - (NSMutableArray*)members
 {
-    if(_members) {
+    if(!_members) {
         _members = [NSMutableArray array];
     }
     return _members;
@@ -108,7 +108,7 @@ static BOOL isSDKInited = NO;
 
 - (NSMutableArray*)admins
 {
-    if(_admins) {
+    if(!_admins) {
         _admins = [NSMutableArray array];
     }
     return _admins;
@@ -156,8 +156,13 @@ static BOOL isSDKInited = NO;
         {
             weakself.chatRoom = aChatroom;
             weakself.isAllMuted = aChatroom.isMuteAllMembers;
+            weakself.admins  = aChatroom.adminList;
+            weakself.members = aChatroom.memberList;
             if(weakself.isAllMuted)
                 [weakself.delegate mutedStateDidChanged];
+            if(![weakself.members containsObject:self.user.username])
+                [weakself.members addObject:self.user.username];
+            [weakself.delegate membersDidChanged];
         }
     }];
     EMCursorResult* result =  [[[EMClient sharedClient] chatManager] fetchHistoryMessagesFromServer:self.chatRoomId conversationType:EMConversationTypeGroupChat startMessageId:@"" pageSize:50 error:nil];
@@ -175,7 +180,7 @@ static BOOL isSDKInited = NO;
                 }else{
                     NSDictionary* ext  = msg.ext;
                     NSNumber* msgType = [ext objectForKey:kMsgType];
-                    if(msgType && msgType.integerValue > 1) {
+                    if(msgType && msgType.integerValue > 0) {
                         [self.askAndAnswerMsgs insertObject:msg atIndex:0];
                     }else
                         [self.dataArray insertObject:msg atIndex:0];
@@ -185,7 +190,7 @@ static BOOL isSDKInited = NO;
             for(EMMessage* msg in result.list) {
                 NSDictionary* ext  = msg.ext;
                 NSNumber* msgType = [ext objectForKey:kMsgType];
-                if(msgType && msgType.integerValue > 1) {
+                if(msgType && msgType.integerValue > 0) {
                     [self.askAndAnswerMsgs addObject:msg];
                 }else
                     [self.dataArray addObject:msg];
@@ -298,6 +303,10 @@ static BOOL isSDKInited = NO;
         if(self.user.roomUuid.length > 0) {
             [ext setObject:self.user.roomUuid forKey:kRoomUuid];
         }
+        if(aType == ChatMsgTypeAsk) {
+            [ext setObject:@1 forKey:kMsgType];
+            [ext setObject:kMsgType forKey:@"asker"];
+        }
         
         EMMessage* msg = [[EMMessage alloc] initWithConversationID:self.chatRoomId from:self.user.username to:self.chatRoomId body:textBody ext:ext];
         msg.chatType = EMChatTypeChatRoom;
@@ -312,10 +321,7 @@ static BOOL isSDKInited = NO;
                             }
                         }
                         if(aType == ChatMsgTypeAsk) {
-                            [weakself.askAndAnswerMsgLock lock];
-                            [weakself.askAndAnswerMsgs addObject:message];
-                            [weakself.askAndAnswerMsgLock unlock];
-                            [weakself.delegate qaMessageDidReceive];
+                            [weakself.delegate qaMessageDidSend:msg];
                         }
                     }else{
                         if(error.code == EMErrorMessageIncludeIllegalContent)
@@ -506,6 +512,8 @@ static BOOL isSDKInited = NO;
 {
     if(![self.members containsObject:aUsername]) {
         [self.members addObject:aUsername];
+        if(self.delegate && [self.delegate respondsToSelector:@selector(membersDidChanged)])
+            [self.delegate membersDidChanged];
     }
 }
 
@@ -514,6 +522,8 @@ static BOOL isSDKInited = NO;
 {
     if([self.members containsObject:aUsername]) {
         [self.members removeObject:aUsername];
+        if(self.delegate && [self.delegate respondsToSelector:@selector(membersDidChanged)])
+            [self.delegate membersDidChanged];
     }
 }
 
@@ -522,6 +532,8 @@ static BOOL isSDKInited = NO;
 {
     if(![self.admins containsObject:aAdmin]) {
         [self.admins addObject:aAdmin];
+        if(self.delegate && [self.delegate respondsToSelector:@selector(membersDidChanged)])
+            [self.delegate membersDidChanged];
     }
 }
 
@@ -530,6 +542,8 @@ static BOOL isSDKInited = NO;
 {
     if([self.admins containsObject:aAdmin]) {
         [self.admins removeObject:aAdmin];
+        if(self.delegate && [self.delegate respondsToSelector:@selector(membersDidChanged)])
+            [self.delegate membersDidChanged];
     }
 }
 

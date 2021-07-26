@@ -29,7 +29,7 @@ static const NSString* kChatRoomId = @"chatroomId";
                           UITextFieldDelegate,
                           AgoraUIContainerDelegate,
                           ChatTopViewDelegate,
-                          ChatViewDelegate>
+                          ChatViewDelegate,UIScrollViewDelegate>
 @property (nonatomic,strong) ChatManager* chatManager;
 @property (nonatomic,strong) ChatTopView* chatTopView;
 @property (nonatomic,strong) AnnouncementView* announcementView;
@@ -40,6 +40,7 @@ static const NSString* kChatRoomId = @"chatroomId";
 @property (nonatomic,strong) UITapGestureRecognizer *tap;
 @property (nonatomic,strong) UIButton* miniButton;
 @property (nonatomic,strong) CustomBadgeView* badgeView;
+@property (nonatomic,strong) UIScrollView* scrollView;
 @end
 
 @implementation ChatWidget
@@ -80,16 +81,21 @@ static const NSString* kChatRoomId = @"chatroomId";
     self.chatTopView.delegate = self;
     [self.containView addSubview:self.chatTopView];
     
+    [self.containView addSubview:self.scrollView];
+    
     self.announcementView = [[AnnouncementView alloc] initWithFrame:CGRectZero];
     
     self.chatView = [[ChatView alloc] initWithFrame:CGRectZero];
     self.chatView.delegate = self;
-    [self.containView addSubview:self.chatView];
+    [self.scrollView addSubview:self.chatView];
     
     self.qaView = [[MsgView alloc] initWithFrame:CGRectZero];
     self.qaView.delegate = self;
+    [self.scrollView addSubview:self.qaView];
     
     self.membersView = [[MembersView alloc] initWithFrame:CGRectZero];
+    [self.scrollView addSubview:self.membersView];
+    [self.scrollView addSubview:self.announcementView];
     
     self.tap = [[UITapGestureRecognizer alloc] initWithTarget:self
                                                        action:@selector(handleTapAction:)];
@@ -119,17 +125,33 @@ static const NSString* kChatRoomId = @"chatroomId";
                                         self.containerView.bounds.size.height);
     self.chatTopView.frame = CGRectMake(0, 0, self.containView.bounds.size.width, TOP_HEIGHT);
     
-    self.announcementView.frame = CGRectMake(0,TOP_HEIGHT,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
+    self.announcementView.frame = CGRectMake(self.containView.bounds.size.width * 3,0,self.containView.bounds.size.width ,self.containView.bounds.size.height - TOP_HEIGHT);
     
-    self.chatView.frame = CGRectMake(0,TOP_HEIGHT,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
+    self.chatView.frame = CGRectMake(0,0,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
     
-    self.qaView.frame = CGRectMake(0,TOP_HEIGHT,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
+    self.qaView.frame = CGRectMake(self.containView.bounds.size.width * 1,0,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
     
-    self.membersView.frame = CGRectMake(0,TOP_HEIGHT,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
+    self.membersView.frame = CGRectMake(self.containView.bounds.size.width *2,0,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
     
     self.miniButton.frame = CGRectMake(10, self.containerView.bounds.size.height - MINIBUTTON_SIZE - 10, MINIBUTTON_SIZE, MINIBUTTON_SIZE);
     
     self.badgeView.frame = CGRectMake(10 + MINIBUTTON_SIZE*4/5, self.containerView.bounds.size.height - MINIBUTTON_SIZE - 10, self.badgeView.badgeSize, self.badgeView.badgeSize);
+    
+    self.scrollView.frame = CGRectMake(0,TOP_HEIGHT,self.containView.bounds.size.width,self.containView.bounds.size.height - TOP_HEIGHT);
+    
+    self.scrollView.contentSize = CGSizeMake(self.containView.bounds.size.width * 4, self.containView.bounds.size.height - TOP_HEIGHT);
+}
+
+- (UIScrollView*)scrollView
+{
+    if(!_scrollView) {
+        _scrollView = [[UIScrollView alloc] init];
+        _scrollView.pagingEnabled = YES;
+        _scrollView.delegate = self;
+        _scrollView.showsVerticalScrollIndicator = NO;
+        _scrollView.showsHorizontalScrollIndicator = NO;
+    }
+    return _scrollView;
 }
 
 - (void)handleTapAction:(UITapGestureRecognizer *)aTap
@@ -215,6 +237,11 @@ static const NSString* kChatRoomId = @"chatroomId";
     [self.chatView updateMsgs:@[aInfo]];
 }
 
+- (void)qaMessageDidSend:(EMMessage *)aMessage
+{
+    [self.qaView updateMsgs:@[aMessage]];
+}
+
 - (void)exceptionDidOccur:(NSString*)aErrorDescription
 {
     [WHToast showErrorWithMessage:aErrorDescription duration:2 finishHandler:^{
@@ -273,38 +300,47 @@ static const NSString* kChatRoomId = @"chatroomId";
     self.announcementView.announcement = aAnnouncement;
 }
 
+- (void)membersDidChanged
+{
+    self.membersView.admins = [self.chatManager.admins copy];
+    self.membersView.members = [self.chatManager.members copy];
+    [self.membersView update];
+}
+
 #pragma mark - ChatTopViewDelegate
 - (void)chatTopViewDidSelectedChanged:(NSUInteger)nSelected
 {
-    switch (nSelected) {
-        case 0:
-            [self.announcementView removeFromSuperview];
-            [self.qaView removeFromSuperview];
-            [self.membersView removeFromSuperview];
-            [self.containView addSubview:self.chatView];
-            break;
-        case 1:
-            [self.announcementView removeFromSuperview];
-            [self.chatView removeFromSuperview];
-            [self.membersView removeFromSuperview];
-            [self.containView addSubview:self.qaView];
-            break;
-        case 2:
-            [self.announcementView removeFromSuperview];
-            [self.qaView removeFromSuperview];
-            [self.chatView removeFromSuperview];
-            [self.containView addSubview:self.membersView];
-            break;
-        case 3:
-            [self.chatView removeFromSuperview];
-            [self.qaView removeFromSuperview];
-            [self.membersView removeFromSuperview];
-            [self.containView addSubview:self.announcementView];
-            break;
-            
-        default:
-            break;
-    }
+    self.scrollView.contentOffset = CGPointMake(self.containView.bounds.size.width * nSelected, 0);
+//    switch (nSelected) {
+//        case 0:
+////            [self.announcementView removeFromSuperview];
+////            [self.qaView removeFromSuperview];
+////            [self.membersView removeFromSuperview];
+////            [self.containView addSubview:self.chatView];
+//            self.scrollView.contentOffset = CGPointMake(self.containView.bounds.size.width * 0, 0);
+//            break;
+//        case 1:
+////            [self.announcementView removeFromSuperview];
+////            [self.chatView removeFromSuperview];
+////            [self.membersView removeFromSuperview];
+////            [self.containView addSubview:self.qaView];
+//            break;
+//        case 2:
+////            [self.announcementView removeFromSuperview];
+////            [self.qaView removeFromSuperview];
+////            [self.chatView removeFromSuperview];
+////            [self.containView addSubview:self.membersView];
+//            break;
+//        case 3:
+////            [self.chatView removeFromSuperview];
+////            [self.qaView removeFromSuperview];
+////            [self.membersView removeFromSuperview];
+////            [self.containView addSubview:self.announcementView];
+//            break;
+//
+//        default:
+//            break;
+//    }
 }
 
 - (void)chatTopViewDidClickHide
@@ -349,5 +385,17 @@ static const NSString* kChatRoomId = @"chatroomId";
 - (void)msgWillSend:(NSString *)aMsgText type:(ChatMsgType)aMsgType
 {
     [self.chatManager sendAskMsgText:aMsgText];
+}
+
+#pragma mark - UIScrollViewDelegate
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView{
+
+    NSLog(@"scrollViewDidEndDecelerating");
+
+    CGPoint offset = self.scrollView.contentOffset;
+    int width = self.containerView.bounds.size.width;
+    if(width > 0)
+        self.chatTopView.currentTab = offset.x/width;
 }
 @end

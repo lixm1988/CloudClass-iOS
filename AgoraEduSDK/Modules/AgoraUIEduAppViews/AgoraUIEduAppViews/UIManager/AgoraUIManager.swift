@@ -327,8 +327,8 @@ extension AgoraUIManager: AgoraEduRoomHandler {
         //                                                      constant: -90)
         let isPad: Bool = UIDevice.current.model == "iPad"
         chat.containerView.agora_safe_bottom = 0
-        chat.containerView.agora_width = isPad ? 300:400
-        chat.containerView.agora_safe_right = 10
+        chat.containerView.agora_width = isPad ? 300:200
+        chat.containerView.agora_safe_right = 0
         switch self.viewType {
         case .oneToOne:
             chat.containerView.agora_safe_y = self.whiteBoard?.containerView.agora_safe_y ?? 100;

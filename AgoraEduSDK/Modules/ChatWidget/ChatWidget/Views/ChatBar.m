@@ -88,9 +88,9 @@
                                            CONTAINVIEW_HEIGHT);
     
     self.emojiButton.frame = CGRectMake(self.bounds.size.width - EMOJIBUTTON_WIDTH,
-                                        8,
-                                        24,
-                                        24);
+                                        4,
+                                        32,
+                                        32);
 }
 
 - (void)InputAction

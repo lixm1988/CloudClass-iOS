@@ -21,6 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)qaMessageDidReceive;
 // 需要展示发送消息
 - (void)chatMessageDidSend:(EMMessage*)aMessage;
+// 需要展示发送的提问消息
+- (void)qaMessageDidSend:(EMMessage*)aMessage;
 // 发生异常
 - (void)exceptionDidOccur:(NSString*)aErrorDescription;
 // 需要撤回消息
@@ -31,6 +33,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)roomStateDidChanged:(ChatRoomState)aState;
 // 公告发生变更
 - (void)announcementDidChanged:(NSString*)aAnnouncement;
+// 成员列表发生变更
+- (void)membersDidChanged;
 
 @end
 

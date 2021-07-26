@@ -78,9 +78,9 @@
                       forState:UIControlStateSelected];
     self.emojiButton.contentMode = UIViewContentModeScaleAspectFit;
     self.emojiButton.frame = CGRectMake(self.bounds.size.width - EMOJIBUTTON_WIDTH - SENDBUTTON_WIDTH - GAP,
-                                        8,
-                                        24,
-                                        24);
+                                        6,
+                                        28,
+                                        28);
     [self addSubview:self.emojiButton];
     [self.emojiButton addTarget:self
                          action:@selector(emojiButtonAction)
