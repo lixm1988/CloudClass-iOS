@@ -623,9 +623,19 @@ private extension LoginViewController{
         // class time
         let startTime:NSNumber = NSNumber(value: NSDate().timeIntervalSince1970 * 1000)
         
+        
         let rtmToken = TokenBuilder.buildToken(KeyCenter.appId(),
                                                appCertificate: KeyCenter.appCertificate(),
                                                userUuid: userUuid)
+        
+        let sel = NSSelectorFromString("setBaseURL:");
+        let url = KeyCenter.hostURL()
+        AgoraClassroomSDK.perform(sel,
+                            with: url)
+
+        let sel1 = NSSelectorFromString("setLogConsoleState:");
+        AgoraClassroomSDK.perform(sel1,
+                            with: 1)
         
         let avatarurl = "https://download-sdk.oss-cn-beijing.aliyuncs.com/downloads/IMDemo/avatar/Image1.png"
 

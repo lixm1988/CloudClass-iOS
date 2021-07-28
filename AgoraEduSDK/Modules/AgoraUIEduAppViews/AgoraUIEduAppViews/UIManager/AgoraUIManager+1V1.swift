@@ -31,7 +31,7 @@ extension AgoraUIManager {
     func layout1V1ContainerViews() {
         guard let `room` = self.room,
               let `whiteBoard` = self.whiteBoard,
-              let `chat` = self.chat,
+              let `chat` = self.hxChat,
               let `shareScreen` = self.shareScreen,
               let `render1V1` = self.render1V1 else {
             return
@@ -53,7 +53,7 @@ extension AgoraUIManager {
         render1V1.containerView.agora_safe_right = 0
         render1V1.containerView.agora_height = size.height * 2 + ViewGap
         
-        chat.containerView.agora_safe_right = size.width + 10
+        chat.containerView.agora_safe_right = size.width
         chat.containerView.agora_width = 56
         chat.containerView.agora_height = 56
         chat.containerView.agora_safe_bottom = 0
@@ -84,7 +84,7 @@ extension AgoraUIManager {
         let ViewGap: CGFloat = 2
         
         let chatViewSafeRight = render1V1RightSpcae + ViewGap
-        chatView.agora_safe_right = isFullScreen ? 10 : chatViewSafeRight
+        chatView.agora_safe_right = isFullScreen ? 0 : chatViewSafeRight
         
         guard let whiteBoardView = whiteBoard?.containerView else {
             return

@@ -265,9 +265,9 @@ static const NSString* kChatRoomId = @"chatroomId";
 - (void)chatTopViewDidClickHide
 {
     self.containView.hidden = YES;
-    self.miniButton.hidden = NO;
+    self.miniButton.hidden = NO; 
     self.badgeView.hidden = self.chatTopView.badgeView.hidden && self.chatTopView.announcementbadgeView.hidden;
-    self.containerView.agora_width = 50;
+    self.containerView.agora_width = 60;
     [self sendMessage:@"min"];
 }
 
