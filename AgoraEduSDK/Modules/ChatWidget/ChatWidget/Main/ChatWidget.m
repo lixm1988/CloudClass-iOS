@@ -382,6 +382,11 @@ static const NSString* kChatRoomId = @"chatroomId";
     [self.chatManager sendCommonTextMsg:aMsgText];
 }
 
+- (void)imageDataWillSend:(NSData*)aImageData isQA:(BOOL)aIsQAMsg
+{
+    [self.chatManager sendImageMsgWithData:aImageData isQA:aIsQAMsg];
+}
+
 - (void)msgWillSend:(NSString *)aMsgText type:(ChatMsgType)aMsgType
 {
     [self.chatManager sendAskMsgText:aMsgText];

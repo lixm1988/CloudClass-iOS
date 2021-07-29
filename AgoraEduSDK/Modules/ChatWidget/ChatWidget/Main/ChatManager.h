@@ -53,6 +53,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)sendCommonTextMsg:(NSString*)aText;
 // 发送提问消息
 - (void)sendAskMsgText:(NSString*)aText;
+// 发送提问消息
+- (void)sendImageMsgWithData:aImageData isQA:(BOOL)aIsQA;
 // 获取用户配置
 - (ChatUserConfig*)userConfig;
 // 接收的消息

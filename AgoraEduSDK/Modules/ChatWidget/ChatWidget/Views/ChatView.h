@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol ChatViewDelegate <NSObject>
 - (void)chatViewDidClickAnnouncement;
 - (void)msgWillSend:(NSString*)aMsgText;
+- (void)imageDataWillSend:(NSData*)aImageData isQA:(BOOL)aIsQAMsg;
 @end
 
 @interface NilMsgView : UIView

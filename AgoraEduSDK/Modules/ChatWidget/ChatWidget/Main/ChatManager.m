@@ -345,6 +345,38 @@ static BOOL isSDKInited = NO;
     }
 }
 
+- (void)sendImageMsgWithData:aImageData isQA:(BOOL)aIsQA
+{
+    EMImageMessageBody *body = [[EMImageMessageBody alloc] initWithData:aImageData displayName:@"image"];
+    NSString *from = [[EMClient sharedClient] currentUsername];
+    NSString *to = self.chatRoomId;
+    NSMutableDictionary* ext = [@{kMsgType:[NSNumber numberWithInteger: aIsQA],
+                                  @"role": [NSNumber numberWithInteger:self.user.role],
+                                  kAvatarUrl: self.user.avatarurl} mutableCopy];
+    if(self.user.nickname.length > 0 ){
+        [ext setObject:self.user.nickname forKey:kNickName];
+    }
+    if(self.user.avatarurl.length > 0 ){
+        [ext setObject:self.user.avatarurl forKey:kAvatarUrl];
+    }
+    if(self.user.roomUuid.length > 0) {
+        [ext setObject:self.user.roomUuid forKey:kRoomUuid];
+    }
+    if(aIsQA) {
+        [ext setObject:@1 forKey:kMsgType];
+        [ext setObject:kMsgType forKey:@"asker"];
+    }
+    EMMessage *message = [[EMMessage alloc] initWithConversationID:to from:from to:to body:body ext:ext];
+    
+    message.chatType = EMChatTypeChatRoom;
+    message.status = EMMessageStatusDelivering;
+    
+    [[EMClient sharedClient].chatManager sendMessage:message progress:nil completion:^(EMMessage *message, EMError *error) {
+        NSLog(@"errorCode    %u   errorDesc    %@",error.code,error.errorDescription);
+        //[weakself messageStatusDidChange:message error:error];
+    }];
+}
+
 - (ChatUserConfig*)userConfig
 {
     return self.user;

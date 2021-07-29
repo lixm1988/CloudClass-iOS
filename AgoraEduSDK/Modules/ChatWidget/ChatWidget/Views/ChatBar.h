@@ -12,6 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol ChatBarDelegate <NSObject>
 
 - (void)msgWillSend:(NSString*)aMsgText;
+- (void)imageDataWillSend:(NSData*)aImageData;
 
 @end
 

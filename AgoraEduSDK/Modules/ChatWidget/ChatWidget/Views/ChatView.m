@@ -497,4 +497,9 @@
     
 }
 
+- (void)imageDataWillSend:(NSData*)aImageData
+{
+    [self.delegate imageDataWillSend:aImageData isQA:NO];
+}
+
 @end
