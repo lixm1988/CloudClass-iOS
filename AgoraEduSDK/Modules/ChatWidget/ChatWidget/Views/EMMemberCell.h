@@ -10,7 +10,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface EMMemberCell : UITableViewCell
+@property (nonatomic,strong) NSString* userId;
 - (instancetype)initWithUid:(NSString*)aUid;
+- (void)setAvartarUrl:(NSString*)aUrl nickName:(NSString*)nickName role:(NSUInteger)role;
 @end
 
 NS_ASSUME_NONNULL_END

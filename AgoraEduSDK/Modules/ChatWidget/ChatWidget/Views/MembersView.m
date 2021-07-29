@@ -10,10 +10,12 @@
 #import <Masonry/Masonry.h>
 #import "UIImage+ChatExt.h"
 #import "EMMemberCell.h"
+#import <HyphenateChat/HyphenateChat.h>
 
 @interface MembersView ()<UITableViewDelegate,UITableViewDataSource>
 @property (nonatomic,strong) UITextField* searchField;
 @property (nonatomic,strong) UITableView* tableView;
+@property (nonatomic,strong) NSMutableDictionary* userInfoDic;
 @end
 
 @implementation MembersView
@@ -101,6 +103,14 @@
     return _members;
 }
 
+- (NSMutableDictionary*)userInfoDic
+{
+    if(!_userInfoDic) {
+        _userInfoDic = [NSMutableDictionary dictionary];
+    }
+    return _userInfoDic;
+}
+
 #pragma mark - UITableViewDelegate
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -121,20 +131,102 @@
             NSString* uid = [self.members objectAtIndex:(col - self.admins.count)];
             if(uid.length)
                 cell = [[EMMemberCell alloc] initWithUid:uid];
+            EMUserInfo* userInfo = [self.userInfoDic objectForKey:uid];
+            if(userInfo) {
+                NSUInteger role = [self _getRoleFromExt:userInfo.ext];
+                [cell setAvartarUrl:userInfo.avatarUrl nickName:userInfo.nickName role:role];
+            }
         }else{
             NSString* uid = [self.admins objectAtIndex:col];
             if(uid.length)
                 cell = [[EMMemberCell alloc] initWithUid:uid];
+            EMUserInfo* userInfo = [self.userInfoDic objectForKey:uid];
+            if(userInfo) {
+                NSUInteger role = [self _getRoleFromExt:userInfo.ext];
+                [cell setAvartarUrl:userInfo.avatarUrl nickName:userInfo.nickName role:role];
+            }
+        }
+    }else{
+        if(cell.userId.length > 0) {
+            EMUserInfo* userInfo = [self.userInfoDic objectForKey:cell.userId];
+            if(userInfo) {
+                NSUInteger role = [self _getRoleFromExt:userInfo.ext];
+                [cell setAvartarUrl:userInfo.avatarUrl nickName:userInfo.nickName role:role];
+            }
         }
     }
     return cell;
 }
 
-- (void)update
+- (NSUInteger)_getRoleFromExt:(NSString*)aExt
 {
+    NSUInteger role = 2;// default student role
+    NSDictionary* extDic = [NSJSONSerialization JSONObjectWithData:[aExt dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableLeaves error:nil];
+    if(extDic) {
+        NSNumber* numberVal = [extDic objectForKey:@"role"];
+        if(numberVal) {
+            role = [numberVal unsignedIntegerValue];
+        }
+    }
+    return role;
+}
+
+- (void)updateMembers:(NSArray*)aMembers admins:(NSArray*)admins
+{
+    self.admins = [admins copy];
+    self.members = [aMembers copy];
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.tableView reloadData];
     });
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(fetchUserInfo) object:nil];
+    [self performSelector:@selector(fetchUserInfo) withObject:nil afterDelay:0.1];
+    
+}
+
+- (void)fetchUserInfo
+{
+    NSMutableArray* array = [NSMutableArray array];
+    for (NSString* uid in self.admins) {
+        if(![self.userInfoDic objectForKey:uid]) {
+            [array addObject:uid];
+        }
+    }
+    for (NSString* uid in self.members) {
+        if(![self.userInfoDic objectForKey:uid]) {
+            [array addObject:uid];
+        }
+    }
+    NSInteger count = array.count;
+    int index = 0;
+    __weak typeof(self) weakself = self;
+    while (count > 0) {
+        NSRange range;
+        range.location = 100*index;
+        if(count > 100) {
+            range.length = 100;
+        }else
+            range.length = count;
+        NSArray* arr = [array subarrayWithRange:range];
+        [[[EMClient sharedClient] userInfoManager] fetchUserInfoById:arr completion:^(NSDictionary *aUserDatas, EMError *aError) {
+            if(!aError) {
+                if(aUserDatas.count > 0) {
+                    for (NSString* uid in aUserDatas) {
+                        EMUserInfo* userInfo = [aUserDatas objectForKey:uid];
+                        if(uid.length > 0 && userInfo)
+                        {
+                            [weakself.userInfoDic setObject:userInfo forKey:uid];
+                        }
+                    }
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [weakself.tableView reloadData];
+                    });
+                    
+                }
+            }
+            
+        }];
+        count -= 100;
+    }
 }
 
 @end

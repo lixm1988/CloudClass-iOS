@@ -243,31 +243,11 @@
 #pragma mark - UIImagePickerControllerDelegate
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
 {
-    NSString *mediaType = info[UIImagePickerControllerMediaType];
-    if ([mediaType isEqualToString:(NSString *)kUTTypeImage]) {
-        NSURL *url = info[UIImagePickerControllerReferenceURL];
-        if (url == nil) {
-            UIImage *orgImage = info[UIImagePickerControllerOriginalImage];
-            NSData *data = UIImageJPEGRepresentation(orgImage, 1);
-            [self.delegate imageDataWillSend:data];
-        } else {
-            if ([[UIDevice currentDevice].systemVersion doubleValue] >= 9.0f) {
-                PHFetchResult *result = [PHAsset fetchAssetsWithALAssetURLs:@[url] options:nil];
-                [result enumerateObjectsUsingBlock:^(PHAsset *asset , NSUInteger idx, BOOL *stop){
-                    if (asset) {
-                        [[PHImageManager defaultManager] requestImageDataForAsset:asset options:nil resultHandler:^(NSData *data, NSString *uti, UIImageOrientation orientation, NSDictionary *dic){
-                            if (data != nil) {
-                                [self.delegate imageDataWillSend:data];
-                            } else {
-                                NSLog(@"图片太大，发送失败");
-                            }
-                        }];
-                    }
-                }];
-            }
-        }
+    UIImage* image = [info objectForKey:UIImagePickerControllerOriginalImage];
+    if(image) {
+        NSData *data = UIImageJPEGRepresentation(image, 1);
+        [self.delegate imageDataWillSend:data];
     }
-    
     [picker dismissViewControllerAnimated:YES completion:nil];
 }
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker

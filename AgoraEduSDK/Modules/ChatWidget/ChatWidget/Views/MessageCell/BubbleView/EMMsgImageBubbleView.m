@@ -8,6 +8,7 @@
 
 #import <SDWebImage/UIImageView+WebCache.h>
 #import "EMMsgImageBubbleView.h"
+#import "UIImage+ChatExt.h"
 
 #define kEMMsgImageDefaultSize 120
 #define kEMMsgImageMinWidth 50
@@ -88,19 +89,20 @@
         size = img.size;
         block(size);
     } else {
+        UIImage* brokenImage = [UIImage imageNamedFromBundle:@"msg_img_broken"];
         BOOL isAutoDownloadThumbnail = ([EMClient sharedClient].options.isAutoDownloadThumbnail);
         if (isAutoDownloadThumbnail) {
-            [self sd_setImageWithURL:[NSURL URLWithString:aRemotePath] placeholderImage:[UIImage imageNamed:@"msg_img_broken"] completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
+            [self sd_setImageWithURL:[NSURL URLWithString:aRemotePath] placeholderImage:brokenImage completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
                     if (!error) {
                         weakself.image = image;
                         block(image.size);
                     } else {
-                        weakself.image = [UIImage imageNamed:@"msg_img_broken"];
+                        weakself.image = brokenImage;
                         block(weakself.image.size);
                     }
             }];
         } else {
-            self.image = [UIImage imageNamed:@"msg_img_broken"];
+            self.image = brokenImage;
         }
     }
 }

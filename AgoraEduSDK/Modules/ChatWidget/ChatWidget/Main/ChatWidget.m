@@ -302,9 +302,7 @@ static const NSString* kChatRoomId = @"chatroomId";
 
 - (void)membersDidChanged
 {
-    self.membersView.admins = [self.chatManager.admins copy];
-    self.membersView.members = [self.chatManager.members copy];
-    [self.membersView update];
+    [self.membersView updateMembers:self.chatManager.members admins:self.chatManager.admins];
 }
 
 #pragma mark - ChatTopViewDelegate

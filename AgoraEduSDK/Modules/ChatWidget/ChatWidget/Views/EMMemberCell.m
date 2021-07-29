@@ -13,7 +13,6 @@
 @interface EMMemberCell ()
 @property (strong,nonatomic) UIImageView* avatarView;
 @property (strong,nonatomic) UILabel* nickName;
-@property (nonatomic,strong) NSString* userId;
 @end
 
 @implementation EMMemberCell
@@ -60,6 +59,19 @@
         make.centerY.equalTo(self.contentView);
         make.height.equalTo(self.contentView);
     }];
+}
+
+- (void)setAvartarUrl:(NSString*)aUrl nickName:(NSString*)nickName role:(NSUInteger)role
+{
+    if(aUrl.length > 0) {
+        NSURL* url = [NSURL URLWithString:aUrl];
+        if(url) {
+            [self.avatarView sd_setImageWithURL:url completed:nil];
+        }
+    }
+    if(nickName.length > 0) {
+        self.nickName.text = nickName;
+    }
 }
 
 @end

@@ -10,9 +10,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface MembersView : UIView
-@property (nonatomic,strong) NSMutableArray* members;
-@property (nonatomic,strong) NSMutableArray* admins;
-- (void)update;
+@property (nonatomic,strong) NSArray* members;
+@property (nonatomic,strong) NSArray* admins;
+- (void)updateMembers:(NSArray*)aMembers admins:(NSArray*)admins;
 @end
 
 NS_ASSUME_NONNULL_END

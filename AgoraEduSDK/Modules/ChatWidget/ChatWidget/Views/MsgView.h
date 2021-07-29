@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol MsgViewDelegate <NSObject>
 - (void)msgWillSend:(NSString*)aMsgText type:(ChatMsgType)aMsgType;
+- (void)imageDataWillSend:(NSData*)aImageData isQA:(BOOL)aIsQAMsg;
 @end
 
 @interface MsgView : UIView<ChatBarDelegate,UITableViewDelegate,UITableViewDataSource>

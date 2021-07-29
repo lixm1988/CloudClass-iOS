@@ -372,8 +372,14 @@ static BOOL isSDKInited = NO;
     message.status = EMMessageStatusDelivering;
     
     [[EMClient sharedClient].chatManager sendMessage:message progress:nil completion:^(EMMessage *message, EMError *error) {
-        NSLog(@"errorCode    %u   errorDesc    %@",error.code,error.errorDescription);
-        //[weakself messageStatusDidChange:message error:error];
+        if(!error) {
+            if(aIsQA)
+                [self.delegate qaMessageDidSend:message];
+            else
+                [self.delegate chatMessageDidSend:message];
+        }else{
+            [self.delegate exceptionDidOccur:error.errorDescription];
+        }
     }];
 }
 

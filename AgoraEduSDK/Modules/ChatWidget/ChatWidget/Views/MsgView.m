@@ -211,4 +211,9 @@
 {
     [self.delegate msgWillSend:aMsgText type:ChatMsgTypeAsk];
 }
+
+- (void)imageDataWillSend:(NSData *)aImageData
+{
+    [self.delegate imageDataWillSend:aImageData isQA:YES];
+}
 @end
