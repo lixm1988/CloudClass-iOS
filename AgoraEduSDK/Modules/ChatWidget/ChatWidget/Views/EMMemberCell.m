@@ -9,10 +9,12 @@
 #import <Masonry/Masonry.h>
 #import <SDWebImage/UIImageView+WebCache.h>
 #import "UIImage+ChatExt.h"
+#import "ChatWidget+Localizable.h"
 
 @interface EMMemberCell ()
 @property (strong,nonatomic) UIImageView* avatarView;
 @property (strong,nonatomic) UILabel* nickName;
+@property (nonatomic, strong) UITextField *roleTag;
 @end
 
 @implementation EMMemberCell
@@ -59,6 +61,24 @@
         make.centerY.equalTo(self.contentView);
         make.height.equalTo(self.contentView);
     }];
+    
+    _roleTag = [[UITextField alloc] init];
+    _roleTag.font = [UIFont systemFontOfSize:12];
+    _roleTag.textColor = [UIColor colorWithRed:88/255.0 green:99/255.0 blue:118/255.0 alpha:1.0];
+    _roleTag.layer.cornerRadius = 8;
+    _roleTag.layer.borderWidth = 1;
+    _roleTag.layer.borderColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0].CGColor;
+    _roleTag.hidden = YES;
+    _roleTag.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 8, 0)];
+    _roleTag.leftViewMode = UITextFieldViewModeAlways;
+    _roleTag.rightView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 8, 0)];
+    _roleTag.rightViewMode = UITextFieldViewModeAlways;
+    _roleTag.enabled = NO;
+    [self.contentView addSubview:_roleTag];
+    [_roleTag mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.nickName.mas_right).offset(10);
+        make.centerY.equalTo(self.contentView);
+    }];
 }
 
 - (void)setAvartarUrl:(NSString*)aUrl nickName:(NSString*)nickName role:(NSUInteger)role
@@ -71,6 +91,24 @@
     }
     if(nickName.length > 0) {
         self.nickName.text = nickName;
+    }
+    switch (role) {
+        case 0:
+            self.roleTag.hidden = YES;
+            break;
+        case 1:
+            self.roleTag.text = [ChatWidget LocalizedString:@"ChatTeacher"];
+            self.roleTag.hidden = NO;
+            break;
+        case 2:
+            self.roleTag.hidden = YES;
+            break;
+        case 3:
+            self.roleTag.text = [ChatWidget LocalizedString:@"ChatAssistant"];
+            self.roleTag.hidden = NO; 
+            break;
+        default:
+            break;
     }
 }
 

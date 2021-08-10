@@ -12,21 +12,24 @@
 #import <Photos/Photos.h>
 #import <MobileCoreServices/MobileCoreServices.h>
 #import <HyphenateChat/HyphenateChat.h>
+#import "EmojiKeyboardView.h"
 
 
 #define CONTAINVIEW_HEIGHT 40
-#define SENDBUTTON_HEIGHT 30
-#define SENDBUTTON_WIDTH 40
+#define SENDBUTTON_HEIGHT 26
+#define SENDBUTTON_WIDTH 60
 #define INPUT_WIDTH 120
 #define EMOJIBUTTON_WIDTH 40
 
-@interface ChatBar ()<InputingViewDelegate,UIImagePickerControllerDelegate>
-@property (nonatomic,strong) UIButton* inputButton;
+@interface ChatBar ()<InputingViewDelegate,UIImagePickerControllerDelegate,UITextFieldDelegate>
+@property (nonatomic,strong) UITextField* inputField;
 @property (nonatomic,strong) UIButton* emojiButton;
-@property (nonatomic,strong) InputingView* inputingView;
-@property (nonatomic,strong) UIButton* exitInputButton;
+@property (nonatomic,strong) UIButton* imageButton;
+@property (nonatomic,strong) UIButton* sendButton;
 @property (nonatomic) CGRect oldframe;
 @property (nonatomic, strong) UIImagePickerController *imagePicker;
+@property (nonatomic,strong) EmojiKeyboardView *emojiKeyBoardView;
+@property (nonatomic,strong) UITapGestureRecognizer* resignRecognizer;
 @end
 
 @implementation ChatBar
@@ -42,14 +45,14 @@
 - (void)setupSubViews
 {
     self.backgroundColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0];
-    self.inputButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.inputButton setTitle:[ChatWidget LocalizedString:@"ChatPlaceholderText"] forState:UIControlStateNormal] ;
-    self.inputButton.backgroundColor = [UIColor clearColor];
-    [self.inputButton setTitleColor:[UIColor colorWithRed:125/255.0 green:135/255.0 blue:152/255.0 alpha:1.0] forState:UIControlStateNormal];
-    [self.inputButton addTarget:self action:@selector(InputAction) forControlEvents:UIControlEventTouchUpInside];
-    [self addSubview:self.inputButton];
-    self.inputButton.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-    self.inputButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+    self.inputField = [[UITextField alloc] init];
+    self.inputField.placeholder = [ChatWidget LocalizedString:@"ChatPlaceholderText"] ;
+    self.inputField.backgroundColor = [UIColor clearColor];
+    self.inputField.textColor = [UIColor colorWithRed:125/255.0 green:135/255.0 blue:152/255.0 alpha:1.0];
+    self.inputField.returnKeyType = UIReturnKeySend;
+    self.inputField.delegate = self;
+    [self addSubview:self.inputField];
+    self.inputField.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     
     self.emojiButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.emojiButton setImage:[UIImage imageNamedFromBundle:@"icon_emoji"]
@@ -62,54 +65,133 @@
                          action:@selector(emojiButtonAction)
                forControlEvents:UIControlEventTouchUpInside];
     
-    UIWindow * window=[[[UIApplication sharedApplication] delegate] window];
-    self.inputingView = [[InputingView alloc] initWithFrame:CGRectMake(0, 100, window.frame.size.width, 40)];
-    self.inputingView.delegate = self;
-    self.exitInputButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    self.exitInputButton.frame = window.frame;
-    [self.exitInputButton addTarget:self action:@selector(ExitInputAction) forControlEvents:UIControlEventTouchUpInside];
-    [window addSubview:self.exitInputButton];
-    [window bringSubviewToFront:self.inputingView];
-    [window addSubview:self.inputingView];
-    self.inputingView.exitInputButton = self.exitInputButton;
-    self.inputingView.hidden = YES;
-    self.exitInputButton.hidden = YES;
+    self.imageButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [self.imageButton setImage:[UIImage imageNamedFromBundle:@"icon-image"]
+                      forState:UIControlStateNormal];
+    self.imageButton.contentMode = UIViewContentModeScaleAspectFit;
+    [self addSubview:self.imageButton];
+    [self.imageButton addTarget:self
+                         action:@selector(imageButtonAction)
+               forControlEvents:UIControlEventTouchUpInside];
+    
+    self.sendButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.sendButton setTitle:[ChatWidget LocalizedString:@"ChatSendText"]
+                     forState:UIControlStateNormal];
+    [self addSubview:self.sendButton];
+    self.sendButton.backgroundColor = [UIColor colorWithRed:53/255.0 green:123/255.0 blue:246/255.0 alpha:1.0];
+    self.sendButton.layer.cornerRadius = 16;
+    [self.sendButton setTitleColor:[UIColor colorWithRed:255/255.0 green:255/255.0 blue:255/255.0 alpha:1.0] forState:UIControlStateNormal];
+    [self.sendButton addTarget:self
+                        action:@selector(sendButtonAction)
+              forControlEvents:UIControlEventTouchUpInside];
+    
+    self.emojiKeyBoardView = [[EmojiKeyboardView alloc] initWithFrame:CGRectMake(0,0,self.bounds.size.width,176)];
+    self.emojiKeyBoardView.delegate = self;
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(keyboardWillChangeFrame:)
+                                                 name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(keyboardDidHide:)
+                                                 name:UIKeyboardWillHideNotification object:nil];
 }
 
-- (void)ExitInputAction
-{
-    [self.inputingView.inputField resignFirstResponder];
-    self.inputingView.hidden = YES;
-    self.exitInputButton.hidden = YES;
-}
 
 - (void)layoutSubviews
 {
     [super layoutSubviews];
     self.oldframe = self.frame;
     
-    self.inputButton.frame = CGRectMake(10,0,self.bounds.size.width - EMOJIBUTTON_WIDTH - SENDBUTTON_WIDTH - 10,
+    self.inputField.frame = CGRectMake(10,self.bounds.size.height - CONTAINVIEW_HEIGHT,self.bounds.size.width - SENDBUTTON_WIDTH - 20,
                                            CONTAINVIEW_HEIGHT);
     
-    self.emojiButton.frame = CGRectMake(self.bounds.size.width - EMOJIBUTTON_WIDTH,
-                                        4,
-                                        32,
-                                        32);
+    self.emojiButton.frame = CGRectMake(14,
+                                        10,
+                                        20,
+                                        20);
+    
+    self.imageButton.frame = CGRectMake(46,
+                                        10,
+                                        20,
+                                        20);
+    
+    self.sendButton.frame = CGRectMake(self.bounds.size.width - SENDBUTTON_WIDTH-10,
+                                       self.bounds.size.height-SENDBUTTON_HEIGHT-12,
+                                       SENDBUTTON_WIDTH,
+                                       SENDBUTTON_HEIGHT);
 }
 
-- (void)InputAction
-{
-    self.inputingView.hidden = NO;
-    self.exitInputButton.hidden = NO;
-    if([self.inputingView.inputField isFirstResponder])
-        [self.inputingView.inputField resignFirstResponder];
-    [self.inputingView.inputField becomeFirstResponder];
-}
 - (void)emojiButtonAction
 {
-//    [self InputAction];
-//    [self.inputingView.emojiButton setSelected:YES];
-//    [self.inputingView changeKeyBoardType];
+    [self.inputField becomeFirstResponder];
+    [self.emojiButton setSelected:!self.emojiButton.isSelected];
+    [self changeKeyBoardType];
+}
+
+- (void)changeKeyBoardType
+{
+    if(self.emojiButton.isSelected) {
+            self.inputField.inputView = self.emojiKeyBoardView;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.inputField reloadInputViews];
+            });
+        }else{
+            self.inputField.inputView = nil;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.inputField reloadInputViews];
+            });
+        }
+}
+
+- (UIGestureRecognizer*)resignRecognizer
+{
+    if(!_resignRecognizer) {
+        _resignRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(touchOutside:)];
+        _resignRecognizer.cancelsTouchesInView = NO;
+        _resignRecognizer.enabled = YES;
+        _resignRecognizer.delegate = self;
+    }
+    return _resignRecognizer;
+}
+
+#pragma mark - UITextFieldDelegate
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    [self sendButtonAction];
+    return YES;
+}
+
+- (void)textFieldDidBeginEditing:(UITextField *)textField
+{
+    [self.window becomeFirstResponder];
+    [self.window addGestureRecognizer:self.resignRecognizer];
+}
+
+// 失去焦点
+- (void)textFieldDidEndEditing:(UITextField *)textField{
+    [self.window removeGestureRecognizer:self.resignRecognizer];
+}
+
+- (void)touchOutside:(UITapGestureRecognizer *)recognizer
+{
+    if (recognizer.state == UIGestureRecognizerStateEnded) {
+        [self.window resignFirstResponder];
+        [self.window endEditing:YES];
+    }
+}
+
+- (void)sendButtonAction
+{
+    NSString* str = self.inputField.text;
+    if(str) {
+        [self.delegate msgWillSend:str];
+    }
+    self.inputField.text = @"";
+    [self.inputField resignFirstResponder];
+}
+
+- (void)imageButtonAction
+{
     [self pickImageAndSend];
 }
 
@@ -170,40 +252,21 @@
 - (void)updateMuteState
 {
     if(self.isAllMuted) {
-        [self.inputButton setTitle:[ChatWidget LocalizedString:@"ChatAllMute"] forState:UIControlStateNormal];
-        [self.inputButton setEnabled:NO];
+        self.inputField.text = [ChatWidget LocalizedString:@"ChatAllMute"];
+        [self.inputField setEnabled:NO];
         self.emojiButton.enabled = NO;
         
     }else{
         if(self.isMuted){
-            [self.inputButton setTitle:[ChatWidget LocalizedString:@"ChatMute"] forState:UIControlStateNormal];
-            [self.inputButton setEnabled:NO];
+            self.inputField.text = [ChatWidget LocalizedString:@"ChatMute"];
+            [self.inputField setEnabled:NO];
             self.emojiButton.enabled = NO;
         }else{
-            [self.inputButton setTitle:[ChatWidget LocalizedString:@"ChatPlaceholderText"] forState:UIControlStateNormal];
-            [self.inputButton setEnabled:YES];
+            self.inputField.text = @"";
+            [self.inputField setEnabled:YES];
             self.emojiButton.enabled = YES;
         }
     }
-}
-
-#pragma mark - InputingViewDelegate
-- (void)msgWillSend:(NSString *)aMsgText
-{
-    [self.delegate msgWillSend:aMsgText];
-}
-
-- (void)keyBoardDidHide:(NSString*)aText
-{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if(aText.length > 0) {
-            [self.inputButton setTitle:aText forState:UIControlStateNormal];
-        }else{
-            if(!self.isMuted && !self.isAllMuted)
-                [self.inputButton setTitle:[ChatWidget LocalizedString:@"ChatPlaceholderText"] forState:UIControlStateNormal];
-        }
-    });
-    
 }
 
 // 获取当前显示的 UIViewController
@@ -255,4 +318,46 @@
     [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
+#pragma mark - CustomKeyBoardDelegate
+
+- (void)emojiItemDidClicked:(NSString *)item{
+    self.inputField.text = [self.inputField.text stringByAppendingString:item];
+}
+
+- (void)emojiDidDelete
+{
+    if ([self.inputField.text length] > 0) {
+        NSRange range = [self.inputField.text rangeOfComposedCharacterSequenceAtIndex:self.inputField.text.length-1];
+        self.inputField.text = [self.inputField.text substringToIndex:range.location];
+    }
+}
+
+#pragma mark - 键盘显示
+- (void)keyboardWillChangeFrame:(NSNotification *)notification{
+        //取出键盘动画的时间(根据userInfo的key----UIKeyboardAnimationDurationUserInfoKey)
+    CGFloat duration = [notification.userInfo[UIKeyboardAnimationDurationUserInfoKey] floatValue];
+
+    CGRect keyboardFrame = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
+    //self.emojiKeyBoardView.frame = keyboardFrame;
+    //执行动画
+    [UIView animateWithDuration:duration animations:^{
+        UIWindow * window=[[[UIApplication sharedApplication] delegate] window];
+        CGRect rect=[self convertRect: self.bounds toView:window];    //获取控件view的相对坐标
+        {
+            CGRect lastframe = self.frame;
+            self.frame = CGRectMake(lastframe.origin.x, lastframe.origin.y - (rect.origin.y - keyboardFrame.origin.y) - lastframe.size.height, lastframe.size.width, lastframe.size.height);
+            
+        }
+        
+    }];
+}
+
+
+#pragma mark --键盘收回
+- (void)keyboardDidHide:(NSNotification *)notification{
+    CGFloat duration = [notification.userInfo[UIKeyboardAnimationDurationUserInfoKey] floatValue];
+    [UIView animateWithDuration:duration animations:^{
+        self.frame = self.oldframe;
+    }];
+}
 @end

@@ -183,7 +183,13 @@ static const NSString* kChatRoomId = @"chatroomId";
                                                             appKey:appKey
                                                           password:password
                                                         chatRoomId:kChatRoomId];
-    
+    NSDictionary* privateChatroom = [properties objectForKey:@"privateChatRoom"];
+    if(privateChatroom)
+    {
+        NSNumber* enableQA = [privateChatroom objectForKey:@"enabled"];
+        manager.enableQAChatroom = [enableQA boolValue];
+        manager.qaChatRoomId = [privateChatroom objectForKey:@"chatRoomId"];
+    }
     manager.delegate = self;
     self.chatManager = manager;
     self.chatView.chatManager = self.chatManager;

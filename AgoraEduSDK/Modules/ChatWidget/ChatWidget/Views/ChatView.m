@@ -14,6 +14,8 @@
 #import "EMDateHelper.h"
 #import "ChatWidget+Localizable.h"
 
+#define CHATBAR_HEIGHT 80
+
 @interface NilMsgView ()
 @property (nonatomic,strong) UIImageView* nilMsgImageView;
 @property (nonatomic,strong) UILabel* nilMsgLable;
@@ -163,11 +165,11 @@
     
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.left.width.equalTo(self);
-            make.bottom.equalTo(self).offset(-40);
+            make.bottom.equalTo(self).offset(-CHATBAR_HEIGHT);
     }];
     [self.chatBar mas_makeConstraints:^(MASConstraintMaker *make) {
         make.bottom.left.width.equalTo(self);
-        make.height.equalTo(@40);
+        make.height.equalTo(@CHATBAR_HEIGHT);
     }];
 }
 

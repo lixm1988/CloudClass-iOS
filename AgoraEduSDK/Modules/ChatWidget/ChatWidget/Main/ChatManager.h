@@ -69,6 +69,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) BOOL isMuted;
 @property (nonatomic,strong) ChatUserConfig* user;
 @property (nonatomic,strong) NSString* chatRoomId;
+@property (nonatomic) BOOL enableQAChatroom;
+@property (nonatomic,strong) NSString* qaChatRoomId;
 @property (nonatomic,strong) NSString* chatroomAnnouncement;
 @property (nonatomic,weak) id<ChatManagerDelegate> delegate;
 @property (nonatomic) ChatRoomState state;

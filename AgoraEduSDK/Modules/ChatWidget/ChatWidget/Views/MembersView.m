@@ -16,6 +16,8 @@
 @property (nonatomic,strong) UITextField* searchField;
 @property (nonatomic,strong) UITableView* tableView;
 @property (nonatomic,strong) NSMutableDictionary* userInfoDic;
+@property (nonatomic,strong) NSString* searchText;
+@property (nonatomic,strong) NSMutableArray* searchList;
 @end
 
 @implementation MembersView
@@ -59,6 +61,7 @@
     
     self.searchField.layer.borderColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0].CGColor;
     [self addSubview:self.searchField];
+    [self.searchField addTarget:self action:@selector(searchTextFieldDidChange:) forControlEvents:UIControlEventEditingChanged];
     [self.searchField mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(self);
         make.top.equalTo(self).offset(3.5);
@@ -75,6 +78,41 @@
     }];
 }
 
+- (void)searchTextFieldDidChange:(UITextField*)textField
+{
+    self.searchText = textField.text;
+    [self _searchAction];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.tableView reloadData];
+    });
+}
+
+- (void)_searchAction
+{
+    NSMutableArray* arr = [NSMutableArray array];
+    if(self.searchText.length > 0) {
+        for(NSString* str in self.admins) {
+            EMUserInfo* userInfo = [self.userInfoDic objectForKey:str];
+            if(userInfo) {
+                NSRange range = [userInfo.nickName rangeOfString:self.searchText options:NSCaseInsensitiveSearch];
+                if(range.length > 0) {
+                    [arr addObject:str];
+                }
+            }
+        }
+        for(NSString* str in self.members) {
+            EMUserInfo* userInfo = [self.userInfoDic objectForKey:str];
+            if(userInfo) {
+                NSRange range = [userInfo.nickName rangeOfString:self.searchText options:NSCaseInsensitiveSearch];
+                if(range.length > 0) {
+                    [arr addObject:str];
+                }
+            }
+        }
+    }
+    self.searchList = [arr mutableCopy];
+}
+
 - (UITableView *)tableView
 {
     if (_tableView == nil) {
@@ -83,7 +121,6 @@
         _tableView.dataSource = self;
         _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     }
-    
     return _tableView;
 }
 
@@ -111,6 +148,14 @@
     return _userInfoDic;
 }
 
+- (NSMutableArray*)searchList
+{
+    if(!_searchList) {
+        _searchList = [NSMutableArray array];
+    }
+    return _searchList;
+}
+
 #pragma mark - UITableViewDelegate
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -118,43 +163,46 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if(self.searchText.length > 0){
+        int count = [self.searchList count];
+        return count;
+    }
     return [self.admins count] + [self.members count];
+}
+
+- (NSString*)_getUidByCol:(NSUInteger)nCol
+{
+    NSString* uid = @"";
+    if(self.searchText.length > 0) {
+        uid = [self.searchList objectAtIndex:nCol];
+    }else{
+        if(nCol >= self.admins.count && nCol < (self.admins.count+self.members.count)) {
+            uid = [self.members objectAtIndex:(nCol - self.admins.count)];
+        }else{
+            uid = [self.admins objectAtIndex:nCol];
+        }
+    }
+    return uid;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     EMMemberCell *cell = (EMMemberCell*)[tableView dequeueReusableCellWithIdentifier:@"EMMemberCell"];
     // Configure the cell...
+    NSUInteger col = indexPath.row;
+    NSString* uid = [self _getUidByCol:col];
     if (cell == nil) {
         //cell =[[EMMemberCell alloc] initWithUid:];
-        int col = indexPath.row;
-        if(col >= self.admins.count && col < (self.admins.count+self.members.count)) {
-            NSString* uid = [self.members objectAtIndex:(col - self.admins.count)];
-            if(uid.length)
-                cell = [[EMMemberCell alloc] initWithUid:uid];
-            EMUserInfo* userInfo = [self.userInfoDic objectForKey:uid];
-            if(userInfo) {
-                NSUInteger role = [self _getRoleFromExt:userInfo.ext];
-                [cell setAvartarUrl:userInfo.avatarUrl nickName:userInfo.nickName role:role];
-            }
-        }else{
-            NSString* uid = [self.admins objectAtIndex:col];
-            if(uid.length)
-                cell = [[EMMemberCell alloc] initWithUid:uid];
-            EMUserInfo* userInfo = [self.userInfoDic objectForKey:uid];
-            if(userInfo) {
-                NSUInteger role = [self _getRoleFromExt:userInfo.ext];
-                [cell setAvartarUrl:userInfo.avatarUrl nickName:userInfo.nickName role:role];
-            }
-        }
-    }else{
-        if(cell.userId.length > 0) {
-            EMUserInfo* userInfo = [self.userInfoDic objectForKey:cell.userId];
-            if(userInfo) {
-                NSUInteger role = [self _getRoleFromExt:userInfo.ext];
-                [cell setAvartarUrl:userInfo.avatarUrl nickName:userInfo.nickName role:role];
-            }
+        if(uid.length > 0)
+            cell = [[EMMemberCell alloc] initWithUid:uid];
+    }
+    if(uid.length > 0) {
+        EMUserInfo* userInfo = [self.userInfoDic objectForKey:uid];
+        if(userInfo) {
+            NSUInteger role = [self _getRoleFromExt:userInfo.ext];
+            [cell setAvartarUrl:userInfo.avatarUrl nickName:userInfo.nickName role:role];
         }
     }
+    
     return cell;
 }
 
@@ -173,14 +221,25 @@
 
 - (void)updateMembers:(NSArray*)aMembers admins:(NSArray*)admins
 {
-    self.admins = [admins copy];
-    self.members = [aMembers copy];
+    [self.admins removeAllObjects];
+    [self.members removeAllObjects];
+    self.admins = [admins mutableCopy];
+    self.members = [aMembers mutableCopy];
+    NSArray* array = [self.userInfoDic allKeys];
+    NSMutableArray* delArray = [NSMutableArray array];
+    for(NSString* uid in array) {
+        if(![self.admins containsObject:uid] && ![self.members containsObject:uid])
+        {
+            [delArray addObject:uid];
+        }
+    }
+    [self.searchList removeObjectsInArray:delArray];
+    [self.userInfoDic removeObjectsForKeys:delArray];
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.tableView reloadData];
     });
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(fetchUserInfo) object:nil];
     [self performSelector:@selector(fetchUserInfo) withObject:nil afterDelay:0.1];
-    
 }
 
 - (void)fetchUserInfo
@@ -215,8 +274,20 @@
                         if(uid.length > 0 && userInfo)
                         {
                             [weakself.userInfoDic setObject:userInfo forKey:uid];
+                            NSUInteger role = [weakself _getRoleFromExt:userInfo.ext];
+                            if(role == 1 || role == 3) {
+                                [weakself.members removeObject:uid];
+                                [weakself.admins removeObject:uid];
+                                if(![weakself.admins containsObject:uid]) {
+                                    if(role == 1) {
+                                        [weakself.admins insertObject:uid atIndex:0];
+                                    }else
+                                        [weakself.admins addObject:uid];
+                                }
+                            }
                         }
                     }
+                    [weakself _searchAction];
                     dispatch_async(dispatch_get_main_queue(), ^{
                         [weakself.tableView reloadData];
                     });

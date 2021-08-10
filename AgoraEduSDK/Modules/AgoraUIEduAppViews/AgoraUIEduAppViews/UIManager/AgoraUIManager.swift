@@ -309,9 +309,11 @@ extension AgoraUIManager: AgoraEduRoomHandler {
         if let imProperties = contextPool.widget.getAgoraWidgetProperties(type: .im),
            let hxProperties = imProperties["huanxin"] as? [String: Any],
            let appKey = hxProperties["appKey"] as? String,
+           let privateChatRoom = hxProperties["privateChatRoom"] as? [String:Any],
            let chatRoomId = hxProperties["chatRoomId"] as? String {
             properties["appkey"] = appKey
             properties["chatRoomId"] = chatRoomId
+            properties["privateChatRoom"] = privateChatRoom
         }
         
         info.properties = properties
