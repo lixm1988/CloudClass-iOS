@@ -337,8 +337,7 @@ static BOOL isSDKInited = NO;
     if(aText.length > 0  && self.isLogin) {
         EMTextMessageBody* textBody = [[EMTextMessageBody alloc] initWithText:aText];
         NSMutableDictionary* ext = [@{kMsgType:[NSNumber numberWithInteger: aType],
-                                      @"role": [NSNumber numberWithInteger:self.user.role],
-                                      kAvatarUrl: self.user.avatarurl} mutableCopy];
+                                      @"role": [NSNumber numberWithInteger:self.user.role]} mutableCopy];
         if(self.user.nickname.length > 0 ){
             [ext setObject:self.user.nickname forKey:kNickName];
         }
@@ -396,8 +395,7 @@ static BOOL isSDKInited = NO;
     NSString *from = [[EMClient sharedClient] currentUsername];
     NSString *to = self.chatRoomId;
     NSMutableDictionary* ext = [@{kMsgType:[NSNumber numberWithInteger: aIsQA],
-                                  @"role": [NSNumber numberWithInteger:self.user.role],
-                                  kAvatarUrl: self.user.avatarurl} mutableCopy];
+                                  @"role": [NSNumber numberWithInteger:self.user.role]} mutableCopy];
     if(self.user.nickname.length > 0 ){
         [ext setObject:self.user.nickname forKey:kNickName];
     }

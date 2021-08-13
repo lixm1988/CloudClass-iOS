@@ -60,7 +60,7 @@
 
 @interface ShowAnnouncementView ()
 @property (nonatomic,strong) UIButton* announcementButton;
-@property (nonatomic,strong) ChatView* parantView;
+@property (nonatomic,weak) ChatView* parantView;
 @end
 
 @implementation ShowAnnouncementView
@@ -138,7 +138,8 @@
     [self addSubview:self.nilMsgView];
     [self.nilMsgView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.width.height.equalTo(@100);
-        make.center.equalTo(self);
+        make.centerX.equalTo(self);
+        make.centerY.equalTo(self).offset(-CHATBAR_HEIGHT/2);
     }];
     
     self.showAnnouncementView = [[ShowAnnouncementView alloc] init];
@@ -156,7 +157,6 @@
     [self addSubview:self.tableView];
     
     self.chatBar = [[ChatBar alloc] init];
-    self.chatBar.parantView = self;
     self.chatBar.delegate = self;
     [self addSubview:self.chatBar];
     self.chatBar.layer.cornerRadius = 4;

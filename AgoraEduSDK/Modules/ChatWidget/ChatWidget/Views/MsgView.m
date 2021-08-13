@@ -77,7 +77,6 @@
 {
     if(!_chatBar) {
         _chatBar = [[ChatBar alloc] init];
-        _chatBar.parantView = self;
         _chatBar.delegate = self;
     }
     return _chatBar;

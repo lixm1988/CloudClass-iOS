@@ -14,7 +14,7 @@
 }
 
 + (NSString *)publishDate {
-    return @"2021.08.03";
+    return @"2021.08.11";
 }
 
 + (NSString *)appId {

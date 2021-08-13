@@ -59,7 +59,7 @@
                       forState:UIControlStateNormal];
     [self.emojiButton setImage:[UIImage imageNamedFromBundle:@"icon_keyboard"]
                       forState:UIControlStateSelected];
-    self.emojiButton.contentMode = UIViewContentModeScaleAspectFit;
+    self.emojiButton.contentMode = UIViewContentModeScaleAspectFill;
     [self addSubview:self.emojiButton];
     [self.emojiButton addTarget:self
                          action:@selector(emojiButtonAction)
@@ -115,8 +115,8 @@
                                         20,
                                         20);
     
-    self.sendButton.frame = CGRectMake(self.bounds.size.width - SENDBUTTON_WIDTH-10,
-                                       self.bounds.size.height-SENDBUTTON_HEIGHT-12,
+    self.sendButton.frame = CGRectMake(self.bounds.size.width - SENDBUTTON_WIDTH-8,
+                                       self.bounds.size.height-SENDBUTTON_HEIGHT-6,
                                        SENDBUTTON_WIDTH,
                                        SENDBUTTON_HEIGHT);
 }
@@ -255,16 +255,19 @@
         self.inputField.text = [ChatWidget LocalizedString:@"ChatAllMute"];
         [self.inputField setEnabled:NO];
         self.emojiButton.enabled = NO;
+        self.imageButton.enabled = NO;
         
     }else{
         if(self.isMuted){
             self.inputField.text = [ChatWidget LocalizedString:@"ChatMute"];
             [self.inputField setEnabled:NO];
             self.emojiButton.enabled = NO;
+            self.imageButton.enabled = NO;
         }else{
             self.inputField.text = @"";
             [self.inputField setEnabled:YES];
             self.emojiButton.enabled = YES;
+            self.imageButton.enabled = YES;
         }
     }
 }
