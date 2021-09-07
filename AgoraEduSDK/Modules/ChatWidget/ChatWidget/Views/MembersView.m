@@ -12,12 +12,13 @@
 #import "EMMemberCell.h"
 #import <HyphenateChat/HyphenateChat.h>
 
-@interface MembersView ()<UITableViewDelegate,UITableViewDataSource>
+@interface MembersView ()<UITableViewDelegate,UITableViewDataSource,UITextFieldDelegate>
 @property (nonatomic,strong) UITextField* searchField;
 @property (nonatomic,strong) UITableView* tableView;
 @property (nonatomic,strong) NSMutableDictionary* userInfoDic;
 @property (nonatomic,strong) NSString* searchText;
 @property (nonatomic,strong) NSMutableArray* searchList;
+@property (nonatomic,strong) UITapGestureRecognizer* resignRecognizer;
 @end
 
 @implementation MembersView
@@ -53,6 +54,7 @@
     self.searchField.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 5, 0)];
     self.searchField.leftView.userInteractionEnabled = NO;
     self.searchField.leftViewMode = UITextFieldViewModeAlways;
+    self.searchField.delegate = self;
     UIImageView* searchImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 12, 12)];
     searchImageView.image = [UIImage imageNamedFromBundle:@"icon_search"];
     self.searchField.rightView = searchImageView;
@@ -297,6 +299,43 @@
             
         }];
         count -= 100;
+    }
+}
+
+- (UIGestureRecognizer*)resignRecognizer
+{
+    if(!_resignRecognizer) {
+        _resignRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(touchOutside:)];
+        _resignRecognizer.cancelsTouchesInView = NO;
+        _resignRecognizer.enabled = YES;
+        _resignRecognizer.delegate = self;
+    }
+    return _resignRecognizer;
+}
+
+#pragma mark - UITextFieldDelegate
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    [self resignFirstResponder];
+    return YES;
+}
+
+- (void)textFieldDidBeginEditing:(UITextField *)textField
+{
+    [self.window becomeFirstResponder];
+    [self.window addGestureRecognizer:self.resignRecognizer];
+}
+
+// 失去焦点
+- (void)textFieldDidEndEditing:(UITextField *)textField{
+    [self.window removeGestureRecognizer:self.resignRecognizer];
+}
+
+- (void)touchOutside:(UITapGestureRecognizer *)recognizer
+{
+    if (recognizer.state == UIGestureRecognizerStateEnded) {
+        [self.window resignFirstResponder];
+        [self.window endEditing:YES];
     }
 }
 
