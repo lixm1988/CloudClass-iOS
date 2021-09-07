@@ -9,6 +9,8 @@
 #import "CountDownExtApp.h"
 #import "AgoraCloudClass-Swift.h"
 @import AgoraUIBaseViews;
+@import AgoraEduExtApp;
+@import AgoraEduContext;
 
 typedef enum : NSInteger {
     CountdownStateDefault = 0,
@@ -17,7 +19,7 @@ typedef enum : NSInteger {
     CountdownStateStop,
 } CountdownState;
 
-@interface CountDownExtApp ()<CountDownDelegate>
+@interface CountDownExtApp ()<CountDownDelegate, AgoraEduWhiteBoardHandler>
 @property (nonatomic, strong) id<CountDownProtocol> countDown;
 @property (nonatomic, assign) CountdownState localState;
 
@@ -40,13 +42,21 @@ typedef enum : NSInteger {
 }
 
 #pragma mark - Life cycle
-- (void)extAppDidLoad:(AgoraExtAppContext *)context {
+- (void)extAppDidLoad:(AgoraEduExtAppContext *)context {
     [self initView];
     [self initData:context.properties];
+    
+    [context.contextPool.whiteBoard registerBoardEventHandler:self];
 }
 
 - (void)extAppWillUnload {
     [self.countDown cancelCountDown];
+}
+
+#pragma mark - AgoraEduWhiteBoardHandler
+// 有权限就可以移动白板，否则不可以
+- (void)onSetDrawingEnabled:(BOOL)enabled {
+    self.view.agora_is_draggable = enabled;
 }
 
 #pragma mark - private
@@ -76,43 +86,11 @@ typedef enum : NSInteger {
 
 - (void)initData:(NSDictionary *)properties {
     [self propertiesDidUpdate:properties];
-    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self
-                                                                          action:@selector(drag:)];
-    [self.view addGestureRecognizer:pan];
 }
 
 - (NSInteger)getCurrentTime {
     NSDate *date = [NSDate date];
     return [date timeIntervalSince1970];
-    
-}
-
-- (void)drag:(UIPanGestureRecognizer *)recognizer {
-    if (![recognizer.view isKindOfClass:AgoraBaseUIView.class]) {
-        return;
-    }
-    AgoraBaseUIView *view = (AgoraBaseUIView *)recognizer.view;
-    
-    CGPoint trans = [recognizer translationInView:UIApplication.sharedApplication.keyWindow];
-    
-    CGFloat ori_x = view.center.x;
-    CGFloat ori_y = view.center.y;
-    
-    BOOL needXConstraint = (view.frame.origin.x + view.frame.size.width + trans.x > view.superview.frame.size.width) || view.frame.origin.x + trans.x < 0;
-    BOOL needYConstraint = (view.frame.origin.y + view.frame.size.height + trans.y > view.superview.frame.size.height) || view.frame.origin.y + trans.y < 0;
-    
-    CGFloat new_x = needXConstraint ? ori_x : (ori_x + trans.x);
-    CGFloat new_y = needYConstraint ? ori_y : (ori_y + trans.y);
-    
-    if (recognizer.state == UIGestureRecognizerStateChanged) {
-        [UIView animateWithDuration:0
-                         animations:^{
-            recognizer.view.center = CGPointMake(new_x,
-                                                 new_y);
-            [recognizer setTranslation:CGPointZero
-                                inView:recognizer.view];
-        }];
-    }
 }
 
 - (void)setProperties:(NSDictionary *)properties {

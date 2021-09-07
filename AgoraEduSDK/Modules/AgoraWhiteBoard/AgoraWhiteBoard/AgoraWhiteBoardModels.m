@@ -24,24 +24,11 @@
 @implementation AgoraWhiteBoardTaskModel
 @end
 
-@interface AgoraWhiteBoardStateModel()
-@property (nonatomic, assign) BOOL isFullScreen;
-@property (nonatomic, assign) BOOL teacherFirstLogin;
-@property (nonatomic, strong) NSArray<NSString *> *grantUsers;
-@property (nonatomic, strong) NSArray<AgoraWhiteBoardTaskModel *> * materialList;
+@implementation AgoraWhiteBoardExtAppMovement
 @end
+
 
 @implementation AgoraWhiteBoardStateModel
-+ (NSDictionary *)modelContainerPropertyGenericClass {
-    return @{@"materialList" : [AgoraWhiteBoardTaskModel class]};
-}
-@end
-
-@implementation AgoraWhiteGlobalStateTaskModel
-
-@end
-
-@implementation AgoraWhiteGlobalStateModel
 - (instancetype)init {
     self = [super init];
     if (self) {
@@ -52,7 +39,7 @@
 }
 
 + (NSDictionary *)modelContainerPropertyGenericClass {
-    return @{@"materialList" : [AgoraWhiteGlobalStateTaskModel class]};
+    return @{@"materialList" : [AgoraWhiteBoardTaskModel class]};
 }
 @end
 

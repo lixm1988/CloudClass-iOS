@@ -12,6 +12,7 @@
 const static NSInteger TAG_BASE = 1000;
 #define BUTTON_WIDTH 60
 #define PERCENT 0.25
+#define BUTTON_HEIGHT 40
 
 @interface ChatTopView ()<UIScrollViewDelegate>
 @property (nonatomic,strong) UIButton* chatButton;
@@ -59,7 +60,7 @@ const static NSInteger TAG_BASE = 1000;
     [self.hideButton addTarget:self action:@selector(hideAction) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:self.hideButton];
     [self.hideButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.equalTo(self).with.offset(-5);
+        make.right.equalTo(self).with.offset(-14);
         make.centerY.equalTo(self);
         make.height.equalTo(@(width));
         make.width.equalTo(@(width));
@@ -67,7 +68,7 @@ const static NSInteger TAG_BASE = 1000;
     
     [self addSubview:self.scrollView];
     self.scrollView.frame = CGRectZero;
-    self.scrollView.contentSize = CGSizeMake(BUTTON_WIDTH*4, 40);
+    self.scrollView.contentSize = CGSizeMake(BUTTON_WIDTH*4, BUTTON_HEIGHT);
 //    [self.scrollView mas_makeConstraints:^(MASConstraintMaker *make) {
 //        make.left.equalTo(self);
 //        make.right.equalTo(self.hideButton.mas_left);
@@ -79,6 +80,7 @@ const static NSInteger TAG_BASE = 1000;
     [self.chatButton setTitle:[ChatWidget LocalizedString:@"ChatText"] forState:UIControlStateNormal];
     [self.chatButton setTitleColor:self.selTitleColor forState:UIControlStateNormal];
     self.chatButton.tag = TAG_BASE;
+    self.chatButton.titleLabel.font = [UIFont systemFontOfSize:12];
     [self.chatButton addTarget:self action:@selector(clickAction:) forControlEvents:UIControlEventTouchUpInside];
     [self.scrollView addSubview:self.chatButton];
 //    [self.chatButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -88,7 +90,7 @@ const static NSInteger TAG_BASE = 1000;
 //        make.width.equalTo(@(BUTTON_WIDTH));
 //    }];
     //self.chatButton.contentEdgeInsets = UIEdgeInsetsMake(0,10, 0, 0);
-    
+
     self.chatBadgeView = [[CustomBadgeView alloc] init];
     [self.scrollView addSubview:self.chatBadgeView];
     self.chatBadgeView.hidden = YES;
@@ -113,7 +115,7 @@ const static NSInteger TAG_BASE = 1000;
     //self.qaButton.contentEdgeInsets = UIEdgeInsetsMake(0,10, 0, 0);
     
     self.qaBadgeView = [[CustomBadgeView alloc] init];
-    [self addSubview:self.qaBadgeView];
+    [self.scrollView addSubview:self.qaBadgeView];
     self.qaBadgeView.hidden = YES;
 //    [self.qaBadgeView mas_makeConstraints:^(MASConstraintMaker *make) {
 //        make.top.equalTo(self).offset(10);
@@ -147,10 +149,14 @@ const static NSInteger TAG_BASE = 1000;
 //        make.height.equalTo(self.scrollView);
 //        make.width.equalTo(@(BUTTON_WIDTH));
 //    }];
+    self.announcementbadgeView = [[CustomBadgeView alloc] init];
+    [self.scrollView addSubview:self.announcementbadgeView];
+    self.announcementbadgeView.hidden = YES;
     
     self.selLine = [[UIView alloc] init];
     self.selLine.backgroundColor = [UIColor colorWithRed:53/255.0 green:123/255.0 blue:246/255.0 alpha:1.0];
     [self.scrollView addSubview:self.selLine];
+    [self.scrollView bringSubviewToFront:self.selLine];
     
 //    [self.selLine mas_makeConstraints:^(MASConstraintMaker *make) {
 //        make.left.equalTo(self.scrollView);
@@ -165,15 +171,15 @@ const static NSInteger TAG_BASE = 1000;
 
 - (void)layoutSubviews
 {
-    int height = 40;
-    self.scrollView.frame = CGRectMake(0, 0, self.bounds.size.width - 40, height);
-    self.chatButton.frame = CGRectMake(0, 0, BUTTON_WIDTH, height);
-    self.qaButton.frame = CGRectMake(BUTTON_WIDTH, 0, BUTTON_WIDTH, height);
-    self.membersButton.frame = CGRectMake(BUTTON_WIDTH*2, 0, BUTTON_WIDTH, height);
-    self.announcementButton.frame = CGRectMake(BUTTON_WIDTH*3, 0, BUTTON_WIDTH, height);
-    self.selLine.frame = CGRectMake(0, height-2, BUTTON_WIDTH, 2);
-    self.chatBadgeView.frame = CGRectMake(BUTTON_WIDTH + 50, 10, 8, 8);
+    self.scrollView.frame = CGRectMake(0, 0, self.bounds.size.width - 40, BUTTON_HEIGHT);
+    self.chatButton.frame = CGRectMake(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT-2);
+    self.qaButton.frame = CGRectMake(BUTTON_WIDTH, 0, BUTTON_WIDTH, BUTTON_HEIGHT-2);
+    self.membersButton.frame = CGRectMake(BUTTON_WIDTH*2, 0, BUTTON_WIDTH, BUTTON_HEIGHT-2);
+    self.announcementButton.frame = CGRectMake(BUTTON_WIDTH*3, 0, BUTTON_WIDTH, BUTTON_HEIGHT-2);
+    self.selLine.frame = CGRectMake(0, BUTTON_HEIGHT-9, BUTTON_WIDTH, 9);
+    self.chatBadgeView.frame = CGRectMake(50, 10, 8, 8);
     self.qaBadgeView.frame = CGRectMake(BUTTON_WIDTH + 50, 10, 8, 8);
+    self.announcementbadgeView.frame = CGRectMake(BUTTON_WIDTH*3 + 50, 10, 8, 8);
 }
 
 - (UIScrollView*)scrollView
@@ -217,13 +223,8 @@ const static NSInteger TAG_BASE = 1000;
 
 - (void)setSelectButton:(UIButton*)button
 {
-    self.selLine.frame = CGRectMake(BUTTON_WIDTH*self.currentTab, 40-2, button.bounds.size.width, 2);
-//    [self.selLine mas_remakeConstraints:^(MASConstraintMaker *make) {
-//        make.left.equalTo(button);
-//        make.bottom.equalTo(self.scrollView);
-//        make.height.equalTo(@2);
-//        make.width.equalTo(self.scrollView).multipliedBy(PERCENT);
-//    }];
+    CGRect frame = CGRectMake(BUTTON_WIDTH*self.currentTab, BUTTON_HEIGHT-9, button.bounds.size.width, 9);
+    self.selLine.frame = frame;
     [self.chatButton setTitleColor:button == self.chatButton?self.selTitleColor:self.unselTitleColor forState:UIControlStateNormal];
     [self.qaButton setTitleColor:button == self.qaButton?self.selTitleColor:self.unselTitleColor forState:UIControlStateNormal];
     [self.membersButton setTitleColor:button == self.membersButton?self.selTitleColor:self.unselTitleColor forState:UIControlStateNormal];
@@ -278,6 +279,16 @@ const static NSInteger TAG_BASE = 1000;
         self.qaBadgeView.hidden = NO;
     }else{
         self.qaBadgeView.hidden = YES;
+    }
+}
+
+- (void)setIsShowAnnouncementRedNotice:(BOOL)isShowAnnouncementRedNotice
+{
+    _isShowAnnouncementRedNotice = isShowAnnouncementRedNotice;
+    if(isShowAnnouncementRedNotice){
+        self.announcementbadgeView.hidden = NO;
+    }else{
+        self.announcementbadgeView.hidden = YES;
     }
 }
 

@@ -13,6 +13,7 @@
 @property (nonatomic, strong, nullable) NSMutableDictionary <NSString *, AgoraExtAppItem *> *extApps; // key: AgoraExtAppIdentifier
 @property (nonatomic, strong, nullable) NSMutableDictionary <NSString *, AgoraExtAppDirtyTag *> *extAppDirtyTags;// key: AgoraExtAppIdentifier
 @property (nonatomic, strong, nullable) NSMutableArray <AgoraExtAppInfo *> * extAppInfos;
+@property (nonatomic, strong, nullable) NSMutableDictionary <NSString *, AgoraExtAppPositionItem *> * extAppPositions;
 @end
 
 @implementation AgoraExtAppsController
@@ -35,6 +36,7 @@
     
     self.extApps = [NSMutableDictionary dictionary];
     self.extAppInfos = [NSMutableArray array];
+    self.extAppPositions = [NSMutableDictionary dictionary];
     
     for (AgoraExtAppConfiguration *item in apps) {
         // AgoraExtAppItem
@@ -100,6 +102,37 @@
         
         [item.instance roomInfoDidUpdate:roomInfo];
     }
+}
+
+- (void)syncAppPosition:(NSString *)appIdentifier
+              diffPoint:(CGPoint)diffPoint {
+    AgoraExtAppPositionItem *itemPosition = [[AgoraExtAppPositionItem alloc] initWithX:diffPoint.x
+                                                                             y:diffPoint.y];
+    self.extAppPositions[appIdentifier] = itemPosition;
+//    NSLog(@"Srs syncAppPosition:%f %f", itemPosition.x, itemPosition.y);
+    
+    if (self.extApps.count <= 0) {
+        return;
+    }
+    
+    AgoraExtAppInfo *info = nil;
+    for (AgoraExtAppInfo *item in self.extAppInfos) {
+        if ([item.appIdentifier isEqualToString:appIdentifier]) {
+            info = item;
+            break;
+        }
+    }
+    if (!info) {
+        return;
+    }
+    
+    AgoraExtAppItem *item = self.extApps[info.appIdentifier];
+    if (!item.instance) {
+        return;
+    }
+    
+    [AgoraBaseExtAppUIViewWrapper onExtAppUIViewPositionSync:item.instance.view
+                                                       point:diffPoint];
 }
 
 - (void)appsCommonDidUpdate:(NSDictionary<NSString *,id> *)appsCommonDic {
@@ -189,11 +222,11 @@
     instance.delegate = self;
     item.instance = instance;
     
-    AgoraExtAppContext *context = [[AgoraExtAppContext alloc] initWithAppIdentifier:appIdentifier
-                                                                      localUserInfo:dirty.localUserInfo
-                                                                           roomInfo:dirty.roomInfo
-                                                                         properties:dirty.properties
-                                                                           language:item.language];
+    AgoraExtAppContext *context = [self getContextWithAppIdentifier:appIdentifier
+                                                      localUserInfo:dirty.localUserInfo
+                                                           roomInfo:dirty.roomInfo
+                                                         properties:dirty.properties
+                                                           language:item.language];
     
     [self.containerView addSubview:instance.view];
     instance.view.agora_x = item.layout.left;
@@ -204,6 +237,33 @@
     [self.containerView setHidden:NO];
     
     [instance extAppDidLoad:context];
+    
+    if (self.extAppPositions[appIdentifier] != nil &&
+        [AgoraBaseExtAppUIViewWrapper isExtAppUIView:instance.view]) {
+
+        AgoraExtAppPositionItem *itemPosition = self.extAppPositions[appIdentifier];
+        CGPoint diffPoint = CGPointMake(itemPosition.x,
+                                        itemPosition.y);
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [AgoraBaseExtAppUIViewWrapper onExtAppUIViewPositionSync:instance.view
+                                                               point:diffPoint];
+        });
+    }
+}
+
+- (AgoraExtAppContext *)getContextWithAppIdentifier:(NSString *)appIdentifier
+                                      localUserInfo:(AgoraExtAppUserInfo *)userInfo
+                                           roomInfo:(AgoraExtAppRoomInfo *)roomInfo
+                                         properties:(NSDictionary *)properties
+                                           language:(NSString *)language {
+
+    AgoraExtAppContext *context = [[AgoraExtAppContext alloc] initWithAppIdentifier:appIdentifier
+                                                                      localUserInfo:userInfo
+                                                                           roomInfo:roomInfo
+                                                                         properties:properties
+                                                                           language:language];
+    return context;
 }
 
 - (NSArray<AgoraExtAppInfo *> *)getExtAppInfos {
@@ -239,6 +299,12 @@ updateProperties:(NSDictionary *)properties
     if (self.extApps.count == 0) {
         [self.containerView setHidden:YES];
     }
+}
+- (void)extApp:(AgoraBaseExtApp *)app
+syncAppPosition:(CGPoint)diffPoint {
+    [self.dataSource appsController:self
+                    syncAppPosition:app.appIdentifier
+                          diffPoint:diffPoint];
 }
 
 #pragma mark - Private

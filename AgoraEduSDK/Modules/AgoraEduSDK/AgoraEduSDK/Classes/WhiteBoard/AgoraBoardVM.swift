@@ -23,6 +23,10 @@ protocol AgoraBoardVMDelegate: NSObjectProtocol {
     func didBoardPageChange(pageIndex: Int, pageCount: Int)
     func didSceneChange(urls: [URL])
     func didScenePathChanged(path: String)
+    func didFlexStateUpdated(state: [String: Any]?)
+    
+    func didPositionUpdated(appIdentifier: String,
+                            diffPoint: CGPoint)
     
     func didCameraConfigChanged(camera: AgoraWhiteBoardCameraConfig)
     
@@ -80,7 +84,6 @@ public class AgoraBoardVM: AgoraBaseVM {
         let options = AgoraWhiteBoardJoinOptions()
         options.boardId = boardId
         options.boardToken = boardToken
-        
         manager.join(with: options) {[weak self] in
             guard let `self` = self else {
                 return
@@ -97,10 +100,23 @@ public class AgoraBoardVM: AgoraBaseVM {
                                                 httpCode: 200)
                         
             let currentBoardState = self.manager.getWhiteBoardStateModel()
-
+            // 初始化控件位置
+            let currentTracks = currentBoardState.extAppMoveTracks as? NSDictionary ?? NSDictionary()
+            for currentKey in currentTracks.allKeys {
+                let extAppMovement = AgoraWhiteBoardExtAppMovement.yy_model(withJSON: currentTracks[currentKey] ?? "")
+                if extAppMovement == nil {
+                    continue
+                }
+                
+                let point = CGPoint(x: extAppMovement!.x,
+                                    y: extAppMovement!.y)
+                self.delegate?.didPositionUpdated(appIdentifier: currentKey as! String,
+                                                  diffPoint: point)
+            }
+            
             let users = currentBoardState.grantUsers
             let usreGranted = users?.contains(self.userUuid) ?? false
-            
+
             if usreGranted {
                 self.delegate?.didBoardLocalPermissionGranted(users ?? [])
             } else {
@@ -108,9 +124,7 @@ public class AgoraBoardVM: AgoraBaseVM {
                 self.lockViewTransform(true)
             }
             
-            DispatchQueue.main.async {
-                success()
-            }
+            success()
         } failure: { [weak self] (error) in
             let errorCode = (error as NSError).code
             
@@ -240,6 +254,34 @@ extension AgoraBoardVM: AgoraWhiteManagerDelegate {
     public func onWhiteBoardStateChanged(_ state: AgoraWhiteBoardStateModel) {
         let originalState = boardState
         boardState = state
+        
+        // flexBoardState
+        let originalFlexState = originalState.flexBoardState as? NSDictionary ?? NSDictionary()
+        let currentFlexState = state.flexBoardState as? NSDictionary ?? NSDictionary()
+        if !originalFlexState.yy_modelIsEqual(currentFlexState) {
+            delegate?.didFlexStateUpdated(state: state.flexBoardState as? [String : Any])
+        }
+        
+        // position
+        let originalTracks = originalState.extAppMoveTracks as? NSDictionary ?? NSDictionary()
+        let currentTracks = state.extAppMoveTracks as? NSDictionary ?? NSDictionary()
+        for currentKey in currentTracks.allKeys {
+            let extAppMovement = AgoraWhiteBoardExtAppMovement.yy_model(withJSON: currentTracks[currentKey] ?? "")
+            if extAppMovement == nil ||
+                extAppMovement?.userId == self.userUuid {
+                continue
+            }
+            
+            let originalExtAppMovement = AgoraWhiteBoardExtAppMovement.yy_model(withJSON: originalTracks[currentKey] ?? "")
+            if originalExtAppMovement?.x != extAppMovement!.x || originalExtAppMovement?.y != extAppMovement!.y {
+                
+                let point = CGPoint(x: extAppMovement!.x,
+                                    y: extAppMovement!.y)
+                delegate?.didPositionUpdated(appIdentifier: currentKey as! String,
+                                             diffPoint: point)
+            }
+
+        }
 
         let originalLocalIsGranted = originalState.grantUsers?.contains(self.userUuid) ?? false
         let currentlLocalIsGranted = state.grantUsers?.contains(self.userUuid) ?? false

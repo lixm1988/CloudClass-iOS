@@ -84,9 +84,15 @@
     [[UIApplication sharedApplication] setIdleTimerDisabled:NO];
 }
 
+- (AgoraEduContextPoolIMP *)contextPool {
+    if (_contextPool == nil) {
+        _contextPool = [AgoraEduContextPoolIMP new];
+    }
+    return _contextPool;
+}
+
 #pragma mark - Private ContextPool
 - (void)initContextPool {
-    self.contextPool = [AgoraEduContextPoolIMP new];
     self.contextPool.whiteBoardIMP = self.boardController;
     self.contextPool.whiteBoardToolIMP = self.boardController;
     self.contextPool.whiteBoardPageControlIMP = self.boardController;
@@ -110,7 +116,7 @@
     } else {
         self.automaticallyAdjustsScrollViewInsets = NO;
     }
-    self.view.backgroundColor = UIColor.whiteColor;
+    self.view.backgroundColor = UIColor.blackColor;
 
     [self widgetsController];
     AgoraEduContextAppType appType = (AgoraEduContextAppType)self.vmConfig.sceneType;
@@ -118,16 +124,16 @@
     self.uimanager = [self.contextPool agoraUIManager:appType];
     [self.view addSubview:self.uimanager.appView];
     self.appView = self.uimanager.appView;
-    self.appView.agora_x = 0;
-    self.appView.agora_y = 0;
-    self.appView.agora_right = 0;
-    self.appView.agora_bottom = 0;
+    self.appView.agora_center_x = 0;
+    self.appView.agora_center_y = 0;
+    self.appView.agora_width = AgoraLayoutAssist.agoraRealMaxWidth;
+    self.appView.agora_height = AgoraLayoutAssist.agoraRealMaxHeight;
 
     [self.view addSubview:self.appsController.containerView];
-    self.appsController.containerView.agora_safe_x = 0;
-    self.appsController.containerView.agora_safe_y = 0;
-    self.appsController.containerView.agora_safe_right = 0;
-    self.appsController.containerView.agora_safe_bottom = 0;
+    self.appsController.containerView.agora_center_x = 0;
+    self.appsController.containerView.agora_center_y = 0;
+    self.appsController.containerView.agora_width = self.appView.agora_width;
+    self.appsController.containerView.agora_height = self.appView.agora_height;
 }
 
 #pragma mark AgoraEduRoomContext
@@ -307,6 +313,8 @@
                                                                     boardId:boardId
                                                                  boardToken:boardToken
                                                                    userUuid:userId
+                                                            collectionStyle:AgoraManagerCache.share.collectionStyle
+                                                                boardStyles:AgoraManagerCache.share.boardStyles
                                                                    download:self.download
                                                                    reportor:reportor
                                                                       cache:self.cache
@@ -362,7 +370,8 @@
 
 #pragma mark - ExtAppsController
 - (id<AgoraController>)createExtAppsController {
-    self.appsController = [[AgoraEduExtAppsController alloc] initWithUrlGroup:self.urlGroup];
+    self.appsController = [[AgoraEduExtAppsController alloc] initWithUrlGroup:self.urlGroup
+                                                                  contextPool:self.contextPool.eduContextPool];
     self.appsController.dataSource = self;
 
     if (AgoraManagerCache.share.extApps.count > 0) {
@@ -435,6 +444,14 @@ needPropertiesOfExtAppIdentifier:(NSString *)appIdentifier
     } failure:nil];
 }
 
+- (void)appsController:(AgoraExtAppsController *)controller
+       syncAppPosition:(NSString *)appIdentifier
+             diffPoint:(CGPoint)diffPoint {
+    // 设置到白板
+    [self.boardController syncAppPositionWithAppIdentifier:appIdentifier
+                                                 diffPoint:diffPoint];
+}
+
 - (NSString *)getDescriptionWithRole:(AgoraRTERoleType)role {
     switch (role) {
         case AgoraRTERoleTypeStudent:
@@ -476,7 +493,14 @@ needPropertiesOfExtAppIdentifier:(NSString *)appIdentifier
 
 - (void)boardController:(AgoraBoardController *)controller
     didScenePathChanged:(NSString *)path {
-    [self.screenShareController updateScenePath:path];
+//    [self.screenShareController updateScenePath:path];
+}
+
+- (void)boardController:(AgoraBoardController *)controller
+     didPositionUpdated:(NSString *)appIdentifier
+              diffPoint:(CGPoint)diffPoint {
+    [self.appsController syncAppPosition:appIdentifier
+                               diffPoint:diffPoint];
 }
 
 - (void)boardController:(AgoraBoardController *)controller
@@ -511,7 +535,6 @@ connectionStateChanged:(AgoraRTEConnectionState)state {
                            cause:(NSDictionary * _Nullable)cause
                     operatorUser:(AgoraRTEBaseUser *)operatorUser {
     [self updateExtApps:classroom];
-    [self.screenShareController updateScreenSelectedProperties:cause];
 
     [self.widgetsController updateRoomProperties:classroom.roomProperties];
         
@@ -777,13 +800,13 @@ remoteStreamsRemoved:(NSArray<AgoraRTEStreamEvent*> *)events  {
 - (void)audioVolumeIndicationOfLocalStream:(NSString *)streamId
                                 withVolume:(NSUInteger)volume {
     [self onUpdateAudioVolumeIndication:volume
-                           streamUuid:streamId];
+                             streamUuid:streamId];
 }
 
 - (void)audioVolumeIndicationOfRemoteStream:(NSString *)streamId
                                  withVolume:(NSUInteger)volume {
     [self onUpdateAudioVolumeIndication:volume
-                           streamUuid:streamId];
+                             streamUuid:streamId];
 }
 
 #pragma mark - Private--Update Room
@@ -821,6 +844,7 @@ remoteStreamsRemoved:(NSArray<AgoraRTEStreamEvent*> *)events  {
 
 - (void)updateExtApps:(AgoraRTEClassroom *)classroom {
     NSDictionary *extAppsCommonDic = classroom.roomProperties[@"extAppsCommon"];
+    
     if (extAppsCommonDic && extAppsCommonDic.count > 0) {
         [self.appsController appsCommonDidUpdate:extAppsCommonDic];
     }
@@ -1013,6 +1037,7 @@ remoteStreamsRemoved:(NSArray<AgoraRTEStreamEvent*> *)events  {
 - (AgoraURLGroup *)urlGroup {
     if (!_urlGroup) {
         _urlGroup = [[AgoraURLGroup alloc] init];
+        _urlGroup.host = self.host;
         _urlGroup.dataSource = self;
     }
 

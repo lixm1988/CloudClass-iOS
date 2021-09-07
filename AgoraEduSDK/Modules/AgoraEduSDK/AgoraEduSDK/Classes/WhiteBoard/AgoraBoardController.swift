@@ -18,8 +18,15 @@ import EduSDK
                          didUpdateUsers userId: [String])
     
     func boardController(_ controller: AgoraBoardController,
+                         didUpdateFlexState state: [String: Any])
+    
+    func boardController(_ controller: AgoraBoardController,
                          didScenePathChanged path: String)
-
+    
+    func boardController(_ controller: AgoraBoardController,
+                         didPositionUpdated appIdentifier: String,
+                         diffPoint: CGPoint)
+    
     func boardController(_ controller: AgoraBoardController,
                          didOccurError error: Error)
 }
@@ -30,7 +37,7 @@ import EduSDK
                                                                           true)[0] + "/AgoraDownload/"
     
     private lazy var afterWork = AgoraAfterWorker()
-    private var boardContentView: UIView?
+    private var boardContentView: WKWebView?
 
     public var boardVM: AgoraBoardVM
     
@@ -50,10 +57,16 @@ import EduSDK
     private var currentScenePath: String = ""
     private var localCameraConfigs = [String: AgoraWhiteBoardCameraConfig]()
     
+    private var manager: AgoraWhiteBoardManager?
+    
+    private var bInit = false
+
     public init(boardAppId: String,
                 boardId: String,
                 boardToken: String,
                 userUuid: String,
+                collectionStyle: [String: Any]?,
+                boardStyles: [String]?,
                 download: AgoraDownloadManager,
                 reportor: AgoraApaasReportorEventTube,
                 cache: AgoraManagerCache,
@@ -69,12 +82,16 @@ import EduSDK
         
         let config = AgoraWhiteBoardConfiguration()
         config.appId = boardAppId
-        let manager = AgoraWhiteBoardManager(coursewareDirectory: coursewareDirectory,
+        config.collectionStyle = collectionStyle
+        config.boardStyles = boardStyles
+        let boardManager = AgoraWhiteBoardManager(coursewareDirectory: coursewareDirectory,
                                              config: config)
-        boardContentView = manager.contentView
+        self.manager = boardManager
+        
+        boardContentView = boardManager.contentView
         boardVM = AgoraBoardVM(boardAppId: boardAppId,
                                userUuid: userUuid,
-                               manager: manager,
+                               manager: boardManager,
                                reportor: reportor,
                                cache: cache,
                                delegate: nil)
@@ -87,6 +104,26 @@ import EduSDK
         
         boardVM.delegate = self
     }
+    
+    public func syncAppPosition(appIdentifier: String,
+                                diffPoint: CGPoint) {
+        
+        guard let stateModel = self.manager?.getWhiteBoardStateModel() else {
+            return
+        }
+        var extAppMoveTracks = stateModel.extAppMoveTracks as? [String: Any] ?? [String: Any]()
+        extAppMoveTracks[appIdentifier] = ["userId": self.userId,
+                                           "x": diffPoint.x,
+                                           "y": diffPoint.y]
+        stateModel.extAppMoveTracks = extAppMoveTracks
+
+        self.manager?.setWhiteBoardStateModel(stateModel)
+    }
+    
+    
+    deinit {
+        self.leave()
+    }
 }
 
 // MARK: - Life cycle
@@ -96,16 +133,19 @@ extension AgoraBoardController {
     }
     
     public func viewDidLoad() {
-        
+
     }
     
     public func viewDidAppear() {
-        initBoardView()
-        join()
+        if !bInit {
+            initBoardView()
+            join()
+        }
+        bInit = true
     }
     
     public func viewWillDisappear() {
-        leave()
+        //leave()
     }
     
     public func viewDidDisappear() {
@@ -116,7 +156,7 @@ extension AgoraBoardController {
 extension AgoraBoardController {
     func join() {
         eventDispatcher.onSetLoadingVisible(true)
-
+        
         boardVM.join(boardId: boardId,
                      boardToken: boardToken) { [weak self] in
             self?.eventDispatcher.onSetLoadingVisible(false)
@@ -138,8 +178,8 @@ extension AgoraBoardController {
 
 private extension AgoraBoardController {
     func initBoardView() {
-        guard let `boardView` = eventDispatcher.onGetBoardContainer(),
-              let `contentView` = boardContentView else {
+        guard let `contentView` = boardContentView,
+              let `boardView` = eventDispatcher.onGetBoardContainer(contentView) else {
             return
         }
         
@@ -179,6 +219,21 @@ private extension AgoraBoardController {
 
 // MARK: - AgoraKitWhiteBoardListener
 extension AgoraBoardController: AgoraEduWhiteBoardContext {
+    public func whiteGlobalState() -> [String: Any] {
+        if let stateModel = self.manager?.getWhiteBoardStateModel(),
+           let state = stateModel.flexBoardState as? [String: Any] {
+            return state ?? [String: Any]()
+        }
+        return [String: Any]()
+    }
+
+    public func setWhiteGlobalState(_ state: [String: Any]) {
+        if let stateModel = self.manager?.getWhiteBoardStateModel() {
+            stateModel.flexBoardState = state
+            self.manager?.setWhiteBoardStateModel(stateModel)
+        }
+    }
+    
     public func onBoardResetSize() {
         boardVM.resetViewSize()
     }
@@ -356,6 +411,17 @@ extension AgoraBoardController: AgoraBoardVMDelegate {
         
         delegate?.boardController(self,
                                   didScenePathChanged: path)
+    }
+    
+    func didFlexStateUpdated(state: [String : Any]?) {
+        eventDispatcher.onWhiteGlobalStateChanged(state ?? [String : Any]())
+    }
+    
+    func didPositionUpdated(appIdentifier: String,
+                            diffPoint: CGPoint) {
+        delegate?.boardController(self,
+                                  didPositionUpdated: appIdentifier,
+                                  diffPoint: diffPoint)
     }
 }
 

@@ -281,7 +281,18 @@ private extension LoginViewController {
                                                                      right: 0),
                                                  language: "zh")
         countDown.image = UIImage(named: "countdown")
-        let apps = [countDown]
+        
+        let answerExt = AgoraExtAppConfiguration(appIdentifier: "io.agora.answer",
+                                                 extAppClass: AnswerExtApp.self,
+                                                 frame: UIEdgeInsets(top: 0,
+                                                                     left: 0,
+                                                                     bottom: 0,
+                                                                     right: 0),
+                                                 language: "zh")
+        answerExt.image = UIImage(named: "countdown")
+
+        let apps = [countDown, answerExt]
+
         AgoraClassroomSDK.registerExtApps(apps)
     }
 
@@ -649,12 +660,45 @@ private extension LoginViewController{
                                           userProperties: ["avatarurl": avatarurl],
                                           boardFitMode: .retain)
         
+        let encoderConfig = AgoraEduVideoEncoderConfiguration(width: 160,
+                                                              height: 120,
+                                                              frameRate: 15,
+                                                              bitrate: 200)
+        config.cameraEncoderConfiguration = encoderConfig
+
+        let size = LoginConfig.device == .iPad ? 40 : 30
+        config.collectionStyle = [
+            "position":"fixed",
+            "left":"50px",
+            "bottom":"\(UIScreen.agora_safe_area_bottom)px",
+            "width":"\(size)px",
+            "height":"\(size)px",
+        ]
+
+        // tab style example
+        let tabBGStyle = """
+            var style = document.createElement('style');
+            style.innerHTML = '.telebox-titlebar { background: #000; }';
+            document.head.appendChild(style);
+        """
+        let tabTitleStyle = """
+            var style = document.createElement('style');
+            style.innerHTML = '.telebox-title { color: #fff; }';
+            document.head.appendChild(style);
+        """
+        let tabBtnStyle = """
+            var style = document.createElement('style');
+            style.innerHTML = '.telebox-titlebar-btn-icon { filter: grayscale(100%); }';
+            document.head.appendChild(style);
+        """
+        config.boardStyles = [tabBGStyle, tabTitleStyle, tabBtnStyle]
+        
         if alertView == nil {
             alertView = AgoraUtils.showLoading(message: "")
         } else {
             alertView?.show(in: self.view)
         }
-
+        
         let chat = AgoraWidgetConfiguration(with: ChatWidget.self,
         widgetId: "Chat")
         AgoraClassroomSDK.registerWidgets([chat])

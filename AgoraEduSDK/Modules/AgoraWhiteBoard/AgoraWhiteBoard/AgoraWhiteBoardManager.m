@@ -40,6 +40,7 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
 @property (nonatomic, strong) WhiteMemberState *whiteMemberState;
 @property (nonatomic, assign) BOOL isWritable;
 @property (nonatomic, copy) NSString *boardScenePath;
+@property (nonatomic, strong) AgoraWhiteBoardConfiguration *boardConfig;
 @end
 
 @implementation AgoraWhiteBoardManager
@@ -50,6 +51,7 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
     if (self) {
         self.isWritable = YES;
         self.boardScenePath = @"";
+        self.boardConfig = config;
         self.cameraConfig = [[AgoraWhiteBoardCameraConfig alloc] init];
         
         if (@available(iOS 11.0, *)) {
@@ -58,8 +60,7 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
                                                                           directory:directory];
         }
         
-        [self initContentViewWithAppId:config.appId
-                                 fonts:config.fonts];
+        [self initContentView];
     }
     return self;
 }
@@ -71,37 +72,75 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
     return state;
 }
 
+- (void)setWhiteBoardStateModel:(AgoraWhiteBoardStateModel *)state {
+    
+    __weak AgoraWhiteBoardManager *weakself = self;
+    
+    [self.room setWritable:YES
+         completionHandler:^(BOOL isWritable,
+                             NSError * _Nullable error) {
+        if (error) {
+            if ([weakself.delegate respondsToSelector:@selector(onWhiteBoardError:)]) {
+                NSError *err = AgoraBoardLocalError(AgoraBoardLocalErrorCode, error);
+                [weakself.delegate onWhiteBoardError: error];
+            }
+        } else {
+            weakself.isWritable = isWritable;
+            [weakself.room setGlobalState:state];
+        }
+    }];
+}
+
 - (UIView *)contentView {
     if (_contentView) {
         return _contentView;
     }
     
+    WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
     if (@available(iOS 11, *)) {
-        WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
         [config setURLSchemeHandler:self.schemeHandler
                        forURLScheme:AgoraWhiteCoursewareScheme];
-        WhiteBoardView *boardView = [[WhiteBoardView alloc] initWithFrame:CGRectZero
-                                                            configuration:config];
-        
-        _contentView = boardView;
-    } else {
-        WhiteBoardView *boardView = [[WhiteBoardView alloc] init];
-        _contentView = boardView;
     }
     
+    if (self.boardConfig.boardStyles != nil) {
+        WKUserContentController *ucc = [[WKUserContentController alloc] init];
+        for (NSString *boardStyle in self.boardConfig.boardStyles) {
+            WKUserScript *userScript = [[WKUserScript alloc] initWithSource:boardStyle
+                                                              injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
+                                                           forMainFrameOnly:YES];
+            [ucc addUserScript:userScript];
+        }
+        config.userContentController = ucc;
+    }
+    
+    _contentView = [[WhiteBoardView alloc] initWithFrame:CGRectZero
+                                           configuration:config];
     return _contentView;
 }
 
 - (void)joinWithOptions:(AgoraWhiteBoardJoinOptions *)options
                 success:(void (^) (void))successBlock
                 failure:(void (^) (NSError * error))failureBlock {
+
     __weak AgoraWhiteBoardManager *weakself = self;
     
     WhiteRoomConfig *roomConfig = [[WhiteRoomConfig alloc] initWithUuid:options.boardId
                                                               roomToken:options.boardToken];
+    
+    WhiteWindowParams *windowParams = [[WhiteWindowParams alloc] init];
+    windowParams.chessboard = NO;
+    CGSize size = self.contentView.frame.size;
+    windowParams.containerSizeRatio = @(size.height / size.width);
+    if (self.boardConfig.collectionStyle != nil) {
+        windowParams.collectorStyles = self.boardConfig.collectionStyle;
+    }
+    
+    roomConfig.windowParams = windowParams;
+
     roomConfig.isWritable = self.isWritable;
     roomConfig.disableNewPencil = NO;
-    
+    roomConfig.useMultiViews = YES;
+
     [self.whiteSDK joinRoomWithConfig:roomConfig
                             callbacks:self
                     completionHandler:^(BOOL success,
@@ -117,11 +156,11 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
             NSInteger sceneIndex = sceneState.index;
             WhiteScene *scene = scenes[sceneIndex];
             
-            if (scene.ppt) {
-                [weakself.room scalePptToFit:WhiteAnimationModeContinuous];
-            }
-            
-            [weakself refreshViewSize];
+//            if (scene.ppt) {
+//                [weakself.room scalePptToFit:WhiteAnimationModeContinuous];
+//            }
+//
+//            [weakself refreshViewSize];
             
             if (successBlock) {
                 successBlock();
@@ -144,24 +183,25 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
 - (void)allowTeachingaids:(BOOL)allow
                   success:(void (^) (void))successBlock
                   failure:(void (^) (NSError * error))failureBlock {
-    [self.room disableDeviceInputs:!allow];
-    
+
     if (allow == self.isWritable) {
         if(successBlock) {
             successBlock();
         }
         return;
     }
-
-    __weak AgoraWhiteBoardManager *weakself = self;
     
+    __weak AgoraWhiteBoardManager *weakself = self;
+
     [self.room setWritable:allow
          completionHandler:^(BOOL isWritable,
                              NSError * _Nullable error) {
-        weakself.isWritable = isWritable;
+        
         if (error && failureBlock) {
             failureBlock(error);
         } else if (successBlock) {
+            weakself.isWritable = isWritable;
+//            [weakself.room disableDeviceInputs:!allow];
             successBlock();
         }
     }];
@@ -186,31 +226,31 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
 - (void)setBoardCameraConfig:(AgoraWhiteBoardCameraConfig *)config {
     self.cameraConfig = config;
     WhiteCameraConfig *camera = [WhiteCameraConfig createWithAGConfig:self.cameraConfig];
-    [self.room moveCamera:camera];
+//    [self.room moveCamera:camera];
 }
 
 // when board view size changed, must call refreshViewSize
 // 当 WhiteBoardView 的 super view 的 frame 变化时，需要调用这个方法
 - (void)refreshViewSize {
-     [self.room refreshViewSize];
+//     [self.room refreshViewSize];
 }
 
 // 重置缩放比例
 - (void)resetViewSize {
-    WhiteSceneState *sceneState = self.room.sceneState;
-    NSArray<WhiteScene *> *scenes = sceneState.scenes;
-    NSInteger sceneIndex = sceneState.index;
-    WhiteScene *scene = scenes[sceneIndex];
-    
-    self.cameraConfig.scale = 1;
-    self.cameraConfig.centerX = 0;
-    self.cameraConfig.centerY = 0;
-
-    [self.room moveCamera:[WhiteCameraConfig createWithAGConfig:self.cameraConfig]];
-    
-    if (scene.ppt) {
-        [self.room scalePptToFit:WhiteAnimationModeContinuous];
-    }
+//    WhiteSceneState *sceneState = self.room.sceneState;
+//    NSArray<WhiteScene *> *scenes = sceneState.scenes;
+//    NSInteger sceneIndex = sceneState.index;
+//    WhiteScene *scene = scenes[sceneIndex];
+//
+//    self.cameraConfig.scale = 1;
+//    self.cameraConfig.centerX = 0;
+//    self.cameraConfig.centerY = 0;
+//
+//    [self.room moveCamera:[WhiteCameraConfig createWithAGConfig:self.cameraConfig]];
+//
+//    if (scene.ppt) {
+//        [self.room scalePptToFit:WhiteAnimationModeContinuous];
+//    }
 }
 
 - (void)putScenes:(NSString *)dir
@@ -227,6 +267,7 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
 
 // lock view
 - (void)lockViewTransform:(BOOL)lock {
+    self.contentView.userInteractionEnabled = !lock;
     [self.room disableCameraTransform:lock];
 }
 
@@ -331,10 +372,10 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
 
 - (void)increaseScale {
     __weak AgoraWhiteBoardManager *weakself = self;
-    [self.room getZoomScaleWithResult:^(CGFloat scale) {        
+    [self.room getZoomScaleWithResult:^(CGFloat scale) {
         weakself.cameraConfig.scale = (scale + 0.1);
         WhiteCameraConfig *config = [WhiteCameraConfig createWithAGConfig:self.cameraConfig];
-        [weakself.room moveCamera:config];
+//        [weakself.room moveCamera:config];
     }];
 }
 
@@ -346,7 +387,7 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
         weakself.cameraConfig.scale = (ss < 0.1 ? 0.1 : ss);
         
         WhiteCameraConfig *config = [WhiteCameraConfig createWithAGConfig:self.cameraConfig];
-        [weakself.room moveCamera:config];
+//        [weakself.room moveCamera:config];
         
         NSLog(@"####### decreaseScale config.scale: %f", config.scale.floatValue);
         NSLog(@"####### decreaseScale config.centerX: %f", config.centerX.floatValue);
@@ -356,29 +397,27 @@ userInfo:@{NSLocalizedDescriptionKey:(reason)}])
 }
 
 #pragma mark - Private
-- (void)initContentViewWithAppId:(NSString *)appId
-                           fonts:(NSDictionary *)fonts {
-    WhiteSdkConfiguration *config = [[WhiteSdkConfiguration alloc] initWithApp:appId];
+- (void)initContentView {
+    WhiteSdkConfiguration *config = [[WhiteSdkConfiguration alloc] initWithApp:self.boardConfig.appId];
     config.enableIFramePlugin = YES;
-    
-    if (@available(iOS 11.0, *)) {
-        WhitePptParams *pptParams = [[WhitePptParams alloc] init];
-        pptParams.scheme = AgoraWhiteCoursewareScheme;
-        config.pptParams = pptParams;
-    }
-    
-    config.fonts = fonts;
+
+//    if (@available(iOS 11.0, *)) {
+//        WhitePptParams *pptParams = [[WhitePptParams alloc] init];
+//        pptParams.scheme = AgoraWhiteCoursewareScheme;
+//        config.pptParams = pptParams;
+//    }
+
+    config.fonts = self.boardConfig.fonts;
     config.userCursor = YES;
     
     self.whiteSDK = [[WhiteSDK alloc] initWithWhiteBoardView:self.contentView
                                                       config:config
                                       commonCallbackDelegate:self];
     
-    [WhiteDisplayerState setCustomGlobalStateClass:AgoraWhiteGlobalStateModel.class];
+    [WhiteDisplayerState setCustomGlobalStateClass:AgoraWhiteBoardStateModel.class];
 }
 
 - (void)setWhiteMemberState {
-    NSLog(@"currentApplianceName: %@", self.whiteMemberState.currentApplianceName);
     [self.room setMemberState:self.whiteMemberState];
 }
 
@@ -469,7 +508,7 @@ The RoomState property in the room will trigger this callback when it changes.
         id modelObj = [modifyState.globalState yy_modelToJSONObject];
         AgoraWhiteBoardStateModel *state = [AgoraWhiteBoardStateModel new];
         [state yy_modelSetWithJSON:modelObj];
-        
+
         if ([self.delegate respondsToSelector:@selector(onWhiteBoardStateChanged:)]) {
             [self.delegate onWhiteBoardStateChanged:state];
         }

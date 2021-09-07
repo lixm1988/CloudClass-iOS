@@ -15,6 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) NSString *appId;
 /** 文档转网页中字体文件映射关系 */
 @property (nonatomic, copy, nullable) NSDictionary *fonts;
+
+@property (nonatomic, strong, nullable) NSDictionary *collectionStyle;
+@property (nonatomic, strong, nullable) NSArray<NSString *> *boardStyles;
 @end
 
 @interface AgoraWhiteBoardJoinOptions : NSObject
@@ -29,25 +32,20 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) NSString *ext;
 @end
 
-// note to modify AgoraWhiteGlobalStateModel
-@interface AgoraWhiteBoardStateModel : NSObject
-@property (nonatomic, assign, readonly) BOOL isFullScreen;
-@property (nonatomic, assign, readonly) BOOL teacherFirstLogin;
-@property (nonatomic, strong, readonly) NSArray <NSString *> * _Nullable grantUsers;
-@property (nonatomic, strong, readonly) NSArray <AgoraWhiteBoardTaskModel *> * _Nullable materialList;
+@interface AgoraWhiteBoardExtAppMovement : NSObject
+@property (nonatomic, strong) NSString *userId;
+@property (nonatomic, assign) CGFloat x;
+@property (nonatomic, assign) CGFloat y;
 @end
 
-@interface AgoraWhiteGlobalStateTaskModel : NSObject
-@property (nonatomic, strong) NSString *resourceUuid;
-@property (nonatomic, strong) NSString *taskUuid;
-@property (nonatomic, strong) NSString *ext;
-@end
-
-@interface AgoraWhiteGlobalStateModel : WhiteGlobalState
+@interface AgoraWhiteBoardStateModel : WhiteGlobalState
 @property (nonatomic, assign) BOOL isFullScreen;
 @property (nonatomic, assign) BOOL teacherFirstLogin;
-@property (nonatomic, strong) NSArray <NSString *> *grantUsers;
-@property (nonatomic, strong) NSArray <AgoraWhiteGlobalStateTaskModel *> *materialList;
+@property (nonatomic, strong) NSArray <NSString *> * _Nullable grantUsers;
+@property (nonatomic, strong) NSArray <AgoraWhiteBoardTaskModel *> * _Nullable materialList;
+@property (nonatomic, strong) NSDictionary * _Nullable flexBoardState;
+
+@property (nonatomic, strong) NSDictionary * _Nullable extAppMoveTracks;
 @end
 
 @interface AgoraWhiteBoardCameraConfig : NSObject

@@ -29,12 +29,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AgoraWhiteBoardManager: NSObject
 @property (nonatomic, weak) id<AgoraWhiteManagerDelegate> delegate;
-@property (nonatomic, strong) UIView *contentView;
+@property (nonatomic, strong) WKWebView *contentView;
 
 - (instancetype)initWithCoursewareDirectory:(NSString *)directory
                                      config:(AgoraWhiteBoardConfiguration *)config;
 
 - (AgoraWhiteBoardStateModel *)getWhiteBoardStateModel;
+- (void)setWhiteBoardStateModel:(AgoraWhiteBoardStateModel *)state;
+
+- (void)setCourseIconStyle:(NSDictionary *)style;
 
 // join
 - (void)joinWithOptions:(AgoraWhiteBoardJoinOptions *)options

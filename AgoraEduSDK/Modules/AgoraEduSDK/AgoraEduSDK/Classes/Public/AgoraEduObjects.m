@@ -49,6 +49,32 @@
 }
 @end
 
+@implementation AgoraEduVideoEncoderConfiguration
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        self.width = 320;
+        self.height = 240;
+        self.frameRate = 15;
+        self.bitrate = 200;
+    }
+    return self;
+}
+
+- (instancetype)initWithWidth:(NSInteger)width
+                       height:(NSInteger)height
+                    frameRate:(NSInteger)frameRate
+                      bitrate:(NSInteger)bitrate {
+    if (self = [super init]) {
+        self.width = width;
+        self.height = height;
+        self.frameRate = frameRate;
+        self.bitrate = bitrate;
+    }
+    return self;
+}
+@end
+
 @implementation AgoraEduLaunchConfig
 - (instancetype)init {
     self = [super init];
@@ -99,6 +125,7 @@
         self.roomUuid = roomUuid;
         self.roomType = roomType;
         self.token = token;
+        self.roleType = roleType;
         self.boardFitMode = boardFitMode;
         
         if (startTime != nil) {
@@ -113,6 +140,8 @@
         if (userProperties != nil) {
             self.userProperties = userProperties;
         }
+        
+        self.cameraEncoderConfiguration = [AgoraEduVideoEncoderConfiguration new];
     }
     return self;
 }

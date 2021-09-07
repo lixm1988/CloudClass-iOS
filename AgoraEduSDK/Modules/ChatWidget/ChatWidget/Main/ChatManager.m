@@ -7,6 +7,7 @@
 //
 
 #import "ChatManager.h"
+#import "EMEmojiHelper.h"
 #import "ChatWidget+Localizable.h"
 
 const static NSString* kMsgType = @"msgtype";
@@ -127,9 +128,9 @@ static BOOL isSDKInited = NO;
         NSString* str = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
         userInfo.ext = str;
         if(self.user.avatarurl.length > 0)
-            userInfo.avatarUrl = [self.user.avatarurl stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLFragmentAllowedCharacterSet]];
+            userInfo.avatarUrl = self.user.avatarurl;
         if(self.user.nickname.length > 0)
-            userInfo.nickName = [self.user.nickname stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLFragmentAllowedCharacterSet]];
+            userInfo.nickName = self.user.nickname ;
         
         [[[EMClient sharedClient] userInfoManager] updateOwnUserInfo:userInfo completion:^(EMUserInfo *aUserInfo, EMError *aError) {
                         
@@ -261,7 +262,7 @@ static BOOL isSDKInited = NO;
     [[[EMClient sharedClient] roomManager] getChatroomAnnouncementWithId:self.chatRoomId completion:^(NSString *aAnnouncement, EMError *aError) {
         if(!aError)
         {
-            [weakself.delegate announcementDidChanged:aAnnouncement];
+            [weakself.delegate announcementDidChanged:aAnnouncement isFirst:YES];
         }
     }];
 }
@@ -335,7 +336,11 @@ static BOOL isSDKInited = NO;
 - (void)sendTextMsg:(NSString*)aText msgType:(ChatMsgType)aType
 {
     if(aText.length > 0  && self.isLogin) {
-        EMTextMessageBody* textBody = [[EMTextMessageBody alloc] initWithText:aText];
+        if(self.user.avatarurl.length <= 0) {
+            self.user.avatarurl = @"https://download-sdk.oss-cn-beijing.aliyuncs.com/downloads/IMDemo/avatar/Image1.png";
+        }
+        NSString* retStr = [EMEmojiHelper convertEmojiToKeys:aText];
+        EMTextMessageBody* textBody = [[EMTextMessageBody alloc] initWithText:retStr];
         NSMutableDictionary* ext = [@{kMsgType:[NSNumber numberWithInteger: aType],
                                       @"role": [NSNumber numberWithInteger:self.user.role]} mutableCopy];
         if(self.user.nickname.length > 0 ){
@@ -434,7 +439,7 @@ static BOOL isSDKInited = NO;
 // 更新头像
 - (void)updateAvatar:(NSString*)avatarUrl
 {
-    self.user.avatarurl = [avatarUrl stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLFragmentAllowedCharacterSet]];
+    self.user.avatarurl = avatarUrl ;
     if(avatarUrl.length > 0) {
         [[[EMClient sharedClient] userInfoManager] updateOwnUserInfo:avatarUrl withType:EMUserInfoTypeAvatarURL completion:nil];
     }
@@ -442,7 +447,7 @@ static BOOL isSDKInited = NO;
 // 更新昵称
 - (void)updateNickName:(NSString*)nickName
 {
-    self.user.nickname = [nickName stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLFragmentAllowedCharacterSet]];
+    self.user.nickname = nickName;
     if(nickName.length > 0){
         [[[EMClient sharedClient] userInfoManager] updateOwnUserInfo:nickName withType:EMUserInfoTypeNickName completion:nil];
     }
@@ -671,7 +676,7 @@ static BOOL isSDKInited = NO;
                          announcement:(NSString *)aAnnouncement
 {
     if([aChatroom.chatroomId isEqualToString:self.chatRoomId]) {
-        [self.delegate announcementDidChanged:aAnnouncement];
+        [self.delegate announcementDidChanged:aAnnouncement isFirst:NO];
     }
 }
 

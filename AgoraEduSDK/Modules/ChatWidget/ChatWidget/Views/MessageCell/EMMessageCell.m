@@ -27,7 +27,6 @@
 
 @property (nonatomic, strong) UITextField *roleTag;
 
-
 @end
 
 @implementation EMMessageCell
@@ -121,39 +120,50 @@
     
     _avatarView.image = [UIImage imageNamed:@"user_avatar_me"];
     
+    _roleTag = [[UITextField alloc] init];
+    _roleTag.font = [UIFont systemFontOfSize:12];
+    _roleTag.textColor = [UIColor colorWithRed:88/255.0 green:99/255.0 blue:118/255.0 alpha:1.0];
+    _roleTag.layer.cornerRadius = 8;
+    _roleTag.layer.borderWidth = 1;
+    _roleTag.layer.borderColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0].CGColor;
+    _roleTag.hidden = YES;
+    _roleTag.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 8, 0)];
+    _roleTag.leftViewMode = UITextFieldViewModeAlways;
+    _roleTag.rightView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 8, 0)];
+    _roleTag.rightViewMode = UITextFieldViewModeAlways;
+    _roleTag.text = [ChatWidget LocalizedString:@"ChatTeacher"];
+    _roleTag.enabled = NO;
+    [self.contentView addSubview:_roleTag];
+    
     if (self.direction == EMMessageDirectionSend) {
         [_avatarView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self.contentView).offset(5);
-            make.right.equalTo(self.contentView).offset(-12);
-            make.width.height.equalTo(@24);
+            make.right.equalTo(self.contentView).offset(-10);
+            make.width.height.equalTo(@28);
         }];
         [_nameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
             make.centerY.equalTo(self.avatarView);
             make.right.equalTo(_avatarView.mas_left).offset(-6);
-            //make.left.equalTo(self.contentView).offset(15);
         }];
         _nameLabel.textAlignment = NSTextAlignmentRight;
         [_roleTag mas_makeConstraints:^(MASConstraintMaker *make) {
             make.centerY.equalTo(self.avatarView);
             make.right.equalTo(_nameLabel.mas_left).offset(-6);
-            //make.left.equalTo(self.contentView).offset(15);
         }];
     } else {
         [_avatarView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self.contentView).offset(5);
-            make.left.equalTo(self.contentView).offset(12);
-            make.width.height.equalTo(@24);
+            make.left.equalTo(self.contentView).offset(10);
+            make.width.height.equalTo(@28);
         }];
         [_nameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
             make.centerY.equalTo(self.avatarView);
             make.left.equalTo(self.avatarView.mas_right).offset(6);
-            //make.right.equalTo(self.contentView).offset(-10);
         }];
         _nameLabel.textAlignment = NSTextAlignmentLeft;
         [_roleTag mas_makeConstraints:^(MASConstraintMaker *make) {
             make.centerY.equalTo(self.avatarView);
             make.left.equalTo(_nameLabel.mas_right).offset(6);
-            //make.right.equalTo(self.contentView).offset(15);
         }];
     }
     
@@ -271,8 +281,10 @@
         }
     }
     if(role.longValue == 1 || role.longValue == 3) {
-        //self.nameLabel.text = [NSString stringWithFormat:@"%@ (老师)",self.nameLabel.text ];
+        self.roleTag.text = role.longValue == 1?[ChatWidget LocalizedString:@"ChatTeacher" ] : [ChatWidget LocalizedString:@"ChatAssistant"];
         self.roleTag.hidden = NO;
+    }else{
+        self.roleTag.hidden = YES;
     }
     
     if (model.direction == EMMessageDirectionSend) {

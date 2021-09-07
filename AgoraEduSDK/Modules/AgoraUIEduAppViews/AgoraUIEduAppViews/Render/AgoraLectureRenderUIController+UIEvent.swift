@@ -85,15 +85,20 @@ extension AgoraLectureRenderUIController: UIScrollViewDelegate, UICollectionView
             return
         }
         
-        let item = coHosts[indexPath.item]
-        let userInfo = item.userInfo
+        if indexPath.item >= coHosts.count {
+            return
+        }
+        
+        if let item = coHosts[indexPath.item] as? AgoraRenderListItem {
+            let userInfo = item.userInfo
 
-        if userInfo.enableVideo {
-            renderVideoStream(userInfo.streamUuid,
-                              on: videoCanvas)
-        } else {
-            unrenderVideoStream(userInfo.streamUuid,
-                                on: videoCanvas)
+            if userInfo.enableVideo {
+                renderVideoStream(userInfo.streamUuid,
+                                  on: videoCanvas)
+            } else {
+                unrenderVideoStream(userInfo.streamUuid,
+                                    on: videoCanvas)
+            }
         }
     }
     
@@ -108,10 +113,15 @@ extension AgoraLectureRenderUIController: UIScrollViewDelegate, UICollectionView
             return
         }
         
-        let item = coHosts[indexPath.item]
-        let userInfo = item.userInfo
-        unrenderVideoStream(userInfo.streamUuid,
-                            on: videoCanvas)
+        if indexPath.item >= coHosts.count {
+            return
+        }
+        
+        if let item = coHosts[indexPath.item] as? AgoraRenderListItem {
+            let userInfo = item.userInfo
+            unrenderVideoStream(userInfo.streamUuid,
+                                on: videoCanvas)
+        }
     }
 }
 
@@ -139,29 +149,6 @@ extension AgoraLectureRenderUIController: AgoraUIUserViewDelegate {
             button.isSelected.toggle()
             let isMuted = button.isSelected
             userContext?.muteAudio(isMuted)
-        }
-    }
-    
-    func userView(_ userView: AgoraUIUserView,
-                  didPressVideoButton button: AgoraBaseUIButton,
-                  indexOfUserList index: Int) {
-        switch index {
-        case teacherIndex:
-            guard let info = teacherInfo,
-                  info.isSelf else {
-                return
-            }
-            
-            button.isSelected.toggle()
-            userContext?.muteVideo(button.isSelected)
-        default:
-            let studentInfo = coHosts[index].userInfo
-            guard studentInfo.isSelf else {
-                return
-            }
-
-            button.isSelected.toggle()
-            userContext?.muteVideo(button.isSelected)
         }
     }
 }

@@ -82,11 +82,14 @@ static AgoraRTCManager *manager = nil;
     self.currentMuteVideo = NO;
     self.currentMuteAllRemoteAudio = NO;
     self.currentMuteAllRemoteVideo = NO;
-    self.rtcChannelInfos = [NSMutableArray array];
     
+    self.rtcChannelInfos = [NSMutableArray array];
     self.rtcStreamStates = [NSMutableArray array];
-    self.threadTimer = [[AgoraSubThreadTimer alloc] initWithThreadName:@"io.agora.timer.event" timeInterval:2.0];
-    self.threadTimer.delegate = self;
+    
+    if (self.threadTimer == nil) {
+        self.threadTimer = [[AgoraSubThreadTimer alloc] initWithThreadName:@"io.agora.timer.event" timeInterval:2.0];
+        self.threadTimer.delegate = self;
+    }
 }
 
 - (void)initEngineKitWithAppid:(NSString *)appid {
@@ -96,13 +99,14 @@ static AgoraRTCManager *manager = nil;
     if(self.rtcEngineKit == nil){
         self.rtcEngineKit = [AgoraRtcEngineKit sharedEngineWithAppId:appid delegate:self];
     }
-    [self.rtcEngineKit setParameters: @"{\"che.audio.keep.audiosession\": true}"];
-    
+
     [self.rtcEngineKit enableVideo];
     [self.rtcEngineKit enableWebSdkInteroperability:YES];
     [self.rtcEngineKit enableDualStreamMode:YES];
     
     [self.rtcEngineKit disableLastmileTest];
+    
+    [self.threadTimer start];
 }
 
 - (int)joinChannelByToken:(NSString * _Nullable)token channelId:(NSString * _Nonnull)channelId info:(NSString * _Nullable)info uid:(NSUInteger)uid {
@@ -632,7 +636,7 @@ static AgoraRTCManager *manager = nil;
     
     [AgoraRTELogService logMessageWithDescribe:@"setParameters:" message:@{@"options":AgoraRTCNoNullString(options), @"code":@(code)}];
     
-    return [self.rtcEngineKit setParameters:options];
+    return code;
 }
 
 + (NSString *_Nullable)getErrorDescription:(NSInteger)code {
@@ -672,11 +676,14 @@ static AgoraRTCManager *manager = nil;
         }
     }
     [self.rtcStreamStates removeAllObjects];
+    [self.rtcChannelInfos removeAllObjects];
     [self.threadTimer stop];
     
     [self.rtcEngineKit stopPreview];
     
+    BOOL cameraBackup = self.frontCamera;
     [self initData];
+    self.frontCamera = cameraBackup;
 }
 
 -(void)dealloc {
