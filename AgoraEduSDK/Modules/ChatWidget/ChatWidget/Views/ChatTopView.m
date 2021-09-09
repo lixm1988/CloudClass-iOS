@@ -238,15 +238,18 @@ const static NSInteger TAG_BASE = 1000;
         switch (currentTab) {
             case 0:
                 [self setSelectButton:self.chatButton];
+                self.isShowRedNotice = NO;
                 break;
             case 1:
                 [self setSelectButton:self.qaButton];
+                self.isShowQARedNotice = NO;
                 break;
             case 2:
                 [self setSelectButton:self.membersButton];
                 break;
             case 3:
                 [self setSelectButton:self.announcementButton];
+                self.isShowAnnouncementRedNotice = NO;
                 break;
             default:
                 break;
