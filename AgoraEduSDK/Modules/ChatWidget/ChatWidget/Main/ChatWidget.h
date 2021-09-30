@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface ChatWidget : AgoraBaseWidget
-
+- (void)showQARedNotice:(BOOL)showQARedNotice;
 @end
 
 NS_ASSUME_NONNULL_END

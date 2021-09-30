@@ -13,7 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol ChatTopViewDelegate <NSObject>
 
 - (void)chatTopViewDidSelectedChanged:(NSUInteger)nSelected;
-- (void)chatTopViewDidClickHide;
 
 @end
 
@@ -21,10 +20,13 @@ NS_ASSUME_NONNULL_BEGIN
 @interface ChatTopView : UIView
 @property (nonatomic,weak) id<ChatTopViewDelegate> delegate;
 @property (nonatomic) BOOL isShowRedNotice;
-@property (nonatomic) BOOL isShowAnnouncementRedNotice;
+@property (nonatomic) BOOL isShowQARedNotice;
 @property (nonatomic) NSInteger currentTab;
-@property (nonatomic,strong) CustomBadgeView* badgeView;
+@property (nonatomic,strong) CustomBadgeView* chatBadgeView;
+@property (nonatomic,strong) CustomBadgeView* qaBadgeView;
+@property (nonatomic) BOOL isShowAnnouncementRedNotice;
 @property (nonatomic,strong) CustomBadgeView* announcementbadgeView;
+@property (nonatomic) NSUInteger membersCount;
 @end
 
 NS_ASSUME_NONNULL_END

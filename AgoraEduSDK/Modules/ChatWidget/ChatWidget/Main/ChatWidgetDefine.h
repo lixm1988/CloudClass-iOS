@@ -12,7 +12,7 @@
 typedef NS_ENUM(NSUInteger, ChatMsgType) {
     ChatMsgTypeCommon = 0,
     ChatMsgTypeAsk,
-    ChatMsgAnswer,
+    ChatMsgTypeAnswer,
 };
 
 typedef NS_ENUM(NSUInteger, ChatRoomState) {
@@ -24,5 +24,13 @@ typedef NS_ENUM(NSUInteger, ChatRoomState) {
     ChatRoomStateJoinFail,
 };
 
+typedef NS_ENUM(NSInteger, AgoraRTERoleType) {
+    AgoraRTERoleTypeInvalid = 0,
+    AgoraRTERoleTypeTeacher = 1,
+    AgoraRTERoleTypeStudent = 2,
+    AgoraRTERoleTypeAssistant = 3,
+};
+
+#define ROLE_IS_TEACHER(role) ((role) == 1 || (role) == 3)
 
 #endif /* ChatWidgetDefine_h */

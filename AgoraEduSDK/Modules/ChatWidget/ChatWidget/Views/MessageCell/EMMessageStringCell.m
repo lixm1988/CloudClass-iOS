@@ -12,6 +12,7 @@
 
 @interface EMMessageStringCell ()
 @property (nonatomic,strong) UIView* containerView;
+@property (nonatomic,strong) UIButton* reeditButton;
 @end
 
 @implementation EMMessageStringCell
@@ -34,7 +35,7 @@
         }];
         
         _stringLabel = [[UILabel alloc] init];
-        _stringLabel.font = [UIFont systemFontOfSize:13];
+        _stringLabel.font = [UIFont systemFontOfSize:12];
         _stringLabel.backgroundColor = [UIColor clearColor];
         _stringLabel.textAlignment = NSTextAlignmentLeft;
         _stringLabel.numberOfLines = 0;
@@ -47,6 +48,7 @@
         }];
         
         [_stringLabel sizeToFit];
+        
         self.preImageView = [[UIImageView alloc] init];
         self.preImageView.image = [UIImage imageNamedFromBundle:@"icon_caution"];
         [self.containerView addSubview:self.preImageView];
@@ -79,6 +81,38 @@
         [paragraphStyle setLineSpacing:5];
         [attributedString addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, [aText length])];
         self.stringLabel.attributedText = attributedString;
+}
+
+- (void)setRecallMsgId:(NSString *)recallMsg{
+    _recallMsgId = recallMsg;
+    if(recallMsg.length > 0) {
+        [self.reeditButton removeFromSuperview];
+        [self.containerView addSubview:self.reeditButton];
+        [self.reeditButton mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(self.stringLabel.mas_right);
+            make.centerY.equalTo(self.stringLabel);
+        }];
+    }else{
+        [self.reeditButton removeFromSuperview];
+    }
+}
+
+- (UIButton*)reeditButton
+{
+    if(!_reeditButton) {
+        _reeditButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [_reeditButton setTitle:@"重新编辑" forState:UIControlStateNormal];
+        _reeditButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        [_reeditButton addTarget:self action:@selector(reeditAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _reeditButton;
+}
+
+- (void)reeditAction
+{
+    if(self.delegate) {
+        [self.delegate reeditMsgId:self.recallMsgId];
+    }
 }
 
 @end

@@ -17,8 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 // 需要展示接收消息
 - (void)chatMessageDidReceive;
+// 需要展示提问消息
+- (void)qaMessageDidReceive;
 // 需要展示发送消息
 - (void)chatMessageDidSend:(EMMessage*)aMessage;
+// 需要展示发送的提问消息
+- (void)qaMessageDidSend:(EMMessage*)aMessage;
 // 发生异常
 - (void)exceptionDidOccur:(NSString*)aErrorDescription;
 // 需要撤回消息
@@ -29,6 +33,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)roomStateDidChanged:(ChatRoomState)aState;
 // 公告发生变更
 - (void)announcementDidChanged:(NSString*)aAnnouncement isFirst:(BOOL)aIsFirst;
+// 成员列表发生变更
+- (void)membersDidChanged;
+// 禁言列表发生变更
+- (void)muteMembersDidChannged;
 
 @end
 
@@ -43,23 +51,38 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)launch;
 // 退出
 - (void)logout;
-// 发送普通聊天消息
-- (void)sendCommonTextMsg:(NSString*)aText;
+- (void)sendTextMsg:(NSString*)aText msgType:(ChatMsgType)aType asker:(NSString*)aAsker;
+- (void)muteAll:(BOOL)aMuteAll;
+// 发送提问消息
+- (void)sendImageMsgWithData:aImageData msgType:(ChatMsgType)aType asker:(NSString*)aAsker;
 // 获取用户配置
 - (ChatUserConfig*)userConfig;
 // 接收的消息
 - (NSArray<EMMessage*> *)msgArray;
+// 接收的消息
+- (NSArray<EMMessage*> *)qaArray;
 // 更新头像
 - (void)updateAvatar:(NSString*)avatarUrl;
 // 更新昵称
 - (void)updateNickName:(NSString*)nickName;
+// 禁言用户
+- (void)muteMember:(NSString*)aUserId mute:(BOOL)aMute;
+// 删除消息
+- (void)deleteMessage:(NSString*)aMsgId;
+// 发布公告
+- (void)publishAnnouncement:(NSString*)aAnnouncement;
 @property (nonatomic) BOOL isAllMuted;
 @property (nonatomic) BOOL isMuted;
 @property (nonatomic,strong) ChatUserConfig* user;
 @property (nonatomic,strong) NSString* chatRoomId;
+@property (nonatomic) BOOL enableQAChatroom;
+@property (nonatomic,strong) NSString* qaChatRoomId;
 @property (nonatomic,strong) NSString* chatroomAnnouncement;
 @property (nonatomic,weak) id<ChatManagerDelegate> delegate;
 @property (nonatomic) ChatRoomState state;
+@property (nonatomic,strong) NSMutableArray* admins;
+@property (nonatomic,strong) NSMutableArray* members;
+@property (nonatomic,strong) NSMutableArray* muteMembers;
 @end
 
 NS_ASSUME_NONNULL_END

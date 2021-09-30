@@ -14,11 +14,12 @@
 #define SENDBUTTON_HEIGHT 30
 #define SENDBUTTON_WIDTH 60
 #define INPUT_WIDTH 120
-#define EMOJIBUTTON_WIDTH 40
+#define EMOJIBUTTON_WIDTH 30
 #define GAP 60
 
 @interface InputingView ()<UITextFieldDelegate,EmojiKeyboardDelegate>
 @property (nonatomic,strong) EmojiKeyboardView *emojiKeyBoardView;
+@property (nonatomic,strong) UIButton* imageButton;
 @end
 
 @implementation InputingView
@@ -55,7 +56,7 @@
               forControlEvents:UIControlEventTouchUpInside];
     
     self.backgroundColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0];
-    self.inputField = [[UITextField alloc] initWithFrame:CGRectMake(GAP,5,self.bounds.size.width - EMOJIBUTTON_WIDTH - SENDBUTTON_WIDTH - GAP*2-20,
+    self.inputField = [[UITextField alloc] initWithFrame:CGRectMake(GAP,5,self.bounds.size.width - EMOJIBUTTON_WIDTH*2 - SENDBUTTON_WIDTH - GAP*2-20,
                                                                     CONTAINVIEW_HEIGHT-10)];
     self.inputField.layer.backgroundColor = [UIColor whiteColor].CGColor;
     self.inputField.layer.cornerRadius = 16;
@@ -76,11 +77,11 @@
                       forState:UIControlStateNormal];
     [self.emojiButton setImage:[UIImage imageNamedFromBundle:@"icon_keyboard"]
                       forState:UIControlStateSelected];
-    self.emojiButton.contentMode = UIViewContentModeScaleAspectFit;
-    self.emojiButton.frame = CGRectMake(self.bounds.size.width - EMOJIBUTTON_WIDTH - SENDBUTTON_WIDTH - GAP,
-                                        8,
-                                        24,
-                                        24);
+    //self.emojiButton.contentMode = UIViewContentModeScaleAspectFit;
+    self.emojiButton.frame = CGRectMake(self.bounds.size.width - EMOJIBUTTON_WIDTH*2 - SENDBUTTON_WIDTH - GAP,
+                                        9,
+                                        22,
+                                        22);
     [self addSubview:self.emojiButton];
     [self.emojiButton addTarget:self
                          action:@selector(emojiButtonAction)
@@ -95,6 +96,19 @@
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(keyboardDidHide:)
                                                  name:UIKeyboardWillHideNotification object:nil];
+    
+    self.imageButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [self.imageButton setImage:[UIImage imageNamedFromBundle:@"icon_image"]
+                      forState:UIControlStateNormal];
+    self.imageButton.contentMode = UIViewContentModeScaleAspectFit;
+    self.imageButton.frame = CGRectMake(self.bounds.size.width - EMOJIBUTTON_WIDTH - SENDBUTTON_WIDTH - GAP,
+                                        9,
+                                        22,
+                                        22);
+    [self addSubview:self.imageButton];
+    [self.imageButton addTarget:self
+                         action:@selector(imageButtonAction)
+               forControlEvents:UIControlEventTouchUpInside];
 }
 
 - (void)changeKeyBoardType
@@ -112,22 +126,35 @@
         }
 }
 
-- (void)sendMsg
+- (void)exit
 {
     self.hidden = YES;
     self.exitInputButton.hidden = YES;
+    self.inputField.text = @"";
+    [self.inputField resignFirstResponder];
+}
+
+- (void)sendMsg
+{
     NSString* sendText = self.inputField.text;
         if(sendText.length > 0) {
             [self.delegate msgWillSend:sendText];
         }
-    self.inputField.text = @"";
-    [self.inputField resignFirstResponder];
+    [self exit];
 }
 
 - (void)sendButtonAction
 {
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(sendMsg) object:nil];
     [self performSelector:@selector(sendMsg) withObject:nil afterDelay:0.1];
+}
+
+- (void)imageButtonAction
+{
+    if(self.delegate && [self.delegate respondsToSelector:@selector(imageButtonDidClick)]) {
+        [self.delegate imageButtonDidClick];
+    }
+    [self exit];
 }
 
 #pragma mark - UITextFieldDelegate

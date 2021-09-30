@@ -23,7 +23,9 @@ typedef NS_ENUM(NSInteger, AgoraEduEvent) {
 // 角色类型
 typedef NS_ENUM(NSInteger, AgoraEduRoleType) {
     // 学生
+    AgoraEduRoleTypeTeacher = 1,
     AgoraEduRoleTypeStudent = 2,
+    AgoraEduRoleTypeAssistant = 3,
 };
 
 // 教室类型

@@ -26,6 +26,7 @@
 @property (nonatomic, strong) UIButton *readReceiptBtn;//阅读回执按钮
 
 @property (nonatomic, strong) UITextField *roleTag;
+
 @end
 
 @implementation EMMessageCell
@@ -96,11 +97,14 @@
     _avatarView.backgroundColor = [UIColor clearColor];
     _avatarView.userInteractionEnabled = YES;
     [self.contentView addSubview:_avatarView];
+    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(avatarViewLongPressAction:)];
+    [_avatarView addGestureRecognizer:longPress];
     
     _nameLabel = [[UILabel alloc] init];
-    _nameLabel.font = [UIFont systemFontOfSize:13];
-    _nameLabel.textColor = [UIColor grayColor];
+    _nameLabel.font = [UIFont fontWithName:@"HelveticaNeue" size: 12];
+    _nameLabel.textColor = [UIColor colorWithRed:25/255.0 green:25/255.0 blue:25/255.0 alpha:1.0];
     [self.contentView addSubview:_nameLabel];
+    
     _avatarView.image = [UIImage imageNamed:@"user_avatar_me"];
     
     _roleTag = [[UITextField alloc] init];
@@ -122,7 +126,7 @@
         [_avatarView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self.contentView).offset(5);
             make.right.equalTo(self.contentView).offset(-10);
-            make.width.height.equalTo(@28);
+            make.width.height.equalTo(@22);
         }];
         [_nameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
             make.centerY.equalTo(self.avatarView);
@@ -137,7 +141,7 @@
         [_avatarView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self.contentView).offset(5);
             make.left.equalTo(self.contentView).offset(10);
-            make.width.height.equalTo(@28);
+            make.width.height.equalTo(@22);
         }];
         [_nameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
             make.centerY.equalTo(self.avatarView);
@@ -304,6 +308,15 @@
     if (aLongPress.state == UIGestureRecognizerStateBegan) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(messageCellDidLongPress:)]) {
             [self.delegate messageCellDidLongPress:self];
+        }
+    }
+}
+
+- (void)avatarViewLongPressAction:(UILongPressGestureRecognizer *)aLongPress
+{
+    if (aLongPress.state == UIGestureRecognizerStateBegan) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(messageCellDidLongPressAvatar:gestureRecognizer:)]) {
+            [self.delegate messageCellDidLongPressAvatar:self gestureRecognizer:aLongPress];
         }
     }
 }

@@ -29,7 +29,7 @@
     [self setupBubbleBackgroundImage];
     
     self.textLabel = [[UILabel alloc] init];
-    self.textLabel.font = [UIFont systemFontOfSize:13];
+    self.textLabel.font = [UIFont systemFontOfSize:12];
     self.textLabel.numberOfLines = 0;
     [self addSubview:self.textLabel];
     [self.textLabel mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -39,16 +39,16 @@
     
     self.textLabel.textColor = [UIColor blackColor];
     if (self.direction == EMMessageDirectionSend) {
-        [self.textLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        [self.textLabel mas_updateConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self).offset(10);
-            make.left.equalTo(self.mas_left).offset(10);
-            make.right.equalTo(self.mas_right).offset(-15);
+            make.left.equalTo(self).offset(10);
+            make.right.equalTo(self).offset(-15);
         }];
     } else {
-        [self.textLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        [self.textLabel mas_updateConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self).offset(10);
-            make.left.equalTo(self.mas_left).offset(15);
-            make.right.equalTo(self.mas_right).offset(-10);
+            make.left.equalTo(self).offset(15);
+            make.right.equalTo(self).offset(-10);
         }];
     }
 }

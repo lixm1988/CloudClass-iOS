@@ -13,13 +13,17 @@
 #import <Masonry/Masonry.h>
 #import "EMDateHelper.h"
 #import "ChatWidget+Localizable.h"
+#import "ChatWidgetDefine.h"
+#import <SDWebImage/UIImageView+WebCache.h>
 
-@interface NilMsgView ()
+#define CHATBAR_HEIGHT 30
+
+@interface NilMessageView ()
 @property (nonatomic,strong) UIImageView* nilMsgImageView;
 @property (nonatomic,strong) UILabel* nilMsgLable;
 @end
 
-@implementation NilMsgView
+@implementation NilMessageView
 
 - (instancetype)init
 {
@@ -44,6 +48,7 @@
     
     self.nilMsgLable = [[UILabel alloc] init];
     self.nilMsgLable.text = [ChatWidget LocalizedString:@"ChatEmptyText"];
+    self.nilMsgLable.font = [UIFont systemFontOfSize:12];
     self.nilMsgLable.textAlignment = NSTextAlignmentCenter;
     [self addSubview:self.nilMsgLable];
     [self.nilMsgLable mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -101,8 +106,8 @@
 
 @end
 
-@interface ChatView ()<UITableViewDelegate, UITableViewDataSource, ChatBarDelegate,EMMessageCellDelegate>
-@property (nonatomic,strong) NilMsgView* nilMsgView;
+@interface ChatView ()<UITableViewDelegate, UITableViewDataSource, ChatBarDelegate,EMMessageCellDelegate,EMMessageStringCellDelegate>
+@property (nonatomic,strong) NilMessageView* nilMessageView;
 @property (strong, nonatomic) UITableView *tableView;
 @property (nonatomic,strong) ShowAnnouncementView* showAnnouncementView;
 @property (strong, nonatomic) NSMutableArray *dataArray;
@@ -113,17 +118,24 @@
 @property (strong, nonatomic) NSIndexPath *menuIndexPath;
 @property (nonatomic, strong) UIMenuController *menuController;
 @property (nonatomic, strong) UIMenuItem *recallMenuItem;
+@property (nonatomic, strong) UIMenuItem *deleteMenuItem;
+@property (nonatomic, strong) UIMenuItem *muteMenuItem;
 // 删除的消息
 @property (nonatomic, strong) NSMutableArray<NSString*>* msgsToDel;
+// 全员禁言按钮
+@property (nonatomic,strong) UIButton* muteAllButton;
+// 图片放大
+@property (nonatomic,strong) UIImageView* fullImageView;
 @end
 
 @implementation ChatView
 
-- (instancetype)initWithFrame:(CGRect)frame
+- (instancetype)initWithFrame:(CGRect)frame chatManager:(ChatManager*)chatManager
 {
     self = [super initWithFrame:frame];
     if(self) {
         self.msgTimelTag = -1;
+        self.chatManager = chatManager;
         [self setupSubViews];
     }
     return self;
@@ -132,11 +144,12 @@
 - (void)setupSubViews
 {
     self.backgroundColor = [UIColor whiteColor];
-    self.nilMsgView = [[NilMsgView alloc] init];
-    [self addSubview:self.nilMsgView];
-    [self.nilMsgView mas_makeConstraints:^(MASConstraintMaker *make) {
+    self.nilMessageView = [[NilMessageView alloc] init];
+    [self addSubview:self.nilMessageView];
+    [self.nilMessageView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.width.height.equalTo(@100);
-        make.center.equalTo(self);
+        make.centerX.equalTo(self);
+        make.centerY.equalTo(self).offset(-CHATBAR_HEIGHT/2);
     }];
     
     self.showAnnouncementView = [[ShowAnnouncementView alloc] init];
@@ -155,19 +168,38 @@
     
     self.chatBar = [[ChatBar alloc] init];
     self.chatBar.delegate = self;
-    self.chatBar.layer.cornerRadius = 4;
     [self addSubview:self.chatBar];
-    [self bringSubviewToFront:self.chatBar];
     [self sendSubviewToBack:self.tableView];
     
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.left.width.equalTo(self);
-            make.bottom.equalTo(self).offset(-40);
+            make.bottom.equalTo(self).offset(-CHATBAR_HEIGHT);
     }];
-    [self.chatBar mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.bottom.left.width.equalTo(self);
-        make.height.equalTo(@40);
-    }];
+    if(!ROLE_IS_TEACHER(self.chatManager.user.role)) {
+        [self.chatBar mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.bottom.equalTo(self).offset(-10);
+            make.height.equalTo(@CHATBAR_HEIGHT);
+            make.left.equalTo(self).offset(10);
+            make.right.equalTo(self).offset(-10);
+        }];
+        self.chatBar.layer.cornerRadius = 15;
+    }else{
+        [self.chatBar mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.bottom.equalTo(self).offset(-5);
+            make.height.equalTo(@CHATBAR_HEIGHT);
+            make.left.equalTo(self).offset(10);
+            make.right.equalTo(self).offset(-50);
+        }];
+        self.chatBar.layer.cornerRadius = 15;
+        
+        [self addSubview:self.muteAllButton];
+        [self.muteAllButton mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.width.height.equalTo(@30);
+            make.centerY.equalTo(self.chatBar);
+            make.right.equalTo(self).offset(-10);
+        }];
+    }
+    
 }
 
 - (void)setAnnouncement:(NSString *)announcement
@@ -224,6 +256,30 @@
     return _menuController;
 }
 
+- (UIButton*)muteAllButton
+{
+    if(!_muteAllButton) {
+        _muteAllButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _muteAllButton.layer.cornerRadius = 15;
+        _muteAllButton.layer.borderWidth = 1;
+        _muteAllButton.imageEdgeInsets = UIEdgeInsetsMake(3, 3, 3, 3);
+        _muteAllButton.contentMode = UIViewContentModeScaleAspectFit;
+        _muteAllButton.layer.borderColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0].CGColor;
+        _muteAllButton.backgroundColor = [UIColor colorWithRed:249/255.0 green:249/255.0 blue:252/255.0 alpha:1.0];
+        [_muteAllButton setImage:[UIImage imageNamedFromBundle:@"icon_mute"] forState:UIControlStateNormal];
+        [_muteAllButton setImage:[UIImage imageNamedFromBundle:@"icon_unmute"] forState:UIControlStateSelected];
+        [_muteAllButton addTarget:self action:@selector(muteAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _muteAllButton;
+}
+
+- (void)muteAction
+{
+    if(self.delegate && [self.delegate respondsToSelector:@selector(muteAllDidClick:)]) {
+        [self.delegate muteAllDidClick:!self.muteAllButton.isSelected];
+    }
+}
+
 - (BOOL)canBecomeFirstResponder
 {
     return YES;
@@ -232,10 +288,28 @@
 - (UIMenuItem *)recallMenuItem
 {
     if (_recallMenuItem == nil) {
-        _recallMenuItem = [[UIMenuItem alloc] initWithTitle:[ChatWidget LocalizedString:@"ChatRecall"] action:@selector(recallMenuItemAction:)];
+        _recallMenuItem = [[UIMenuItem alloc] initWithTitle:[ChatWidget LocalizedString:@"ChatRecall"] action:@selector(deleteMenuItemAction:)];
     }
     
     return _recallMenuItem;
+}
+
+- (UIMenuItem *)deleteMenuItem
+{
+    if (_deleteMenuItem == nil) {
+        _deleteMenuItem = [[UIMenuItem alloc] initWithTitle:[ChatWidget LocalizedString:@"Delete"] action:@selector(deleteMenuItemAction:)];
+    }
+    
+    return _deleteMenuItem;
+}
+
+- (UIMenuItem *)muteMenuItem
+{
+    if (_muteMenuItem == nil) {
+        _muteMenuItem = [[UIMenuItem alloc] initWithTitle:[ChatWidget LocalizedString:@"ChatMute"] action:@selector(muteMenuItemAction:)];
+    }
+    
+    return _muteMenuItem;
 }
 
 - (NSMutableArray<NSString*>*)msgsToDel
@@ -258,6 +332,7 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     id obj = [self.dataArray objectAtIndex:indexPath.row];
+    NSString* recallMsgId = @"";
     NSString *cellString = nil;
     if ([obj isKindOfClass:[NSString class]]) {
         cellString = (NSString *)obj;
@@ -271,7 +346,22 @@
             NSString*action = cmdBody.action;
             NSDictionary* ext = model.emModel.ext;
             if([action isEqualToString:@"DEL"]) {
-                cellString = [ChatWidget LocalizedString:@"ChatTeacherRemoveMsg"];
+                NSString* msgId = [ext objectForKey:@"msgId"];
+                NSLog(@"msgIdToDel:%@",msgId);
+                BOOL isRecall = NO;
+                if(msgId.length > 0) {
+                    EMMessage* msgToDel = [[[EMClient sharedClient] chatManager] getMessageWithMessageId:msgId];
+                    if(msgToDel) {
+                        if([msgToDel.from isEqualToString:model.emModel.from]) {
+                            isRecall = YES;
+                            recallMsgId = msgId;
+                        }
+                    }
+                }
+                if(isRecall)
+                    cellString = [NSString stringWithFormat:@"%@ %@",model.emModel.from,[ChatWidget LocalizedString:@"ChatUserRecallMsg"] ];
+                else
+                    cellString = [ChatWidget LocalizedString:@"ChatTeacherRemoveMsg"];
             }
             if([action isEqualToString:@"setAllMute"]) {
                 cellString = [ChatWidget LocalizedString:@"ChatTeacherMuteAll"];
@@ -303,6 +393,10 @@
         }
 
         [cell updatetext:cellString];
+        cell.recallMsgId = recallMsgId;
+        if(recallMsgId.length > 0) {
+            cell.delegate = self;
+        }
         return cell;
     } else {
         EMMessageModel *model = (EMMessageModel *)obj;
@@ -413,10 +507,62 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         [weakself.tableView reloadData];
         if(weakself.dataArray.count > 0){
-            weakself.nilMsgView.hidden = YES;
+            weakself.nilMessageView.hidden = YES;
         }
         [weakself scrollToBottomRow];
     });
+}
+
+- (void)muteStateChange
+{
+    if(ROLE_IS_TEACHER(self.chatManager.user.role)) {
+        self.muteAllButton.selected = self.chatManager.isAllMuted;
+    }
+}
+
+- (UIImageView*)fullImageView
+{
+    if(!_fullImageView) {
+        _fullImageView = [[UIImageView alloc] init];
+        _fullImageView.userInteractionEnabled = YES;
+        _fullImageView.multipleTouchEnabled = YES;
+        _fullImageView.backgroundColor = [UIColor colorWithWhite:1 alpha:0.9];
+        _fullImageView.contentMode = UIViewContentModeScaleAspectFit;
+        UITapGestureRecognizer* tap = [[UITapGestureRecognizer alloc] initWithTarget:self
+                                                           action:@selector(handleTapAction:)];
+        [_fullImageView addGestureRecognizer:tap];
+        [self addGestureRecognizerToView:_fullImageView];
+    }
+    return _fullImageView;
+}
+
+- (void) addGestureRecognizerToView:(UIView *)view
+{
+    // 缩放手势
+     UIPinchGestureRecognizer *pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchView:)];
+
+    [view addGestureRecognizer:pinchGestureRecognizer];
+}
+
+// 处理缩放手势
+ - (void) pinchView:(UIPinchGestureRecognizer *)pinchGestureRecognizer
+{
+    UIView *view = pinchGestureRecognizer.view;
+
+    if (pinchGestureRecognizer.state == UIGestureRecognizerStateBegan || pinchGestureRecognizer.state == UIGestureRecognizerStateChanged)
+
+    {
+
+     view.transform = CGAffineTransformScale(view.transform, pinchGestureRecognizer.scale, pinchGestureRecognizer.scale);          pinchGestureRecognizer.scale = 1;
+
+     }
+}
+
+- (void)handleTapAction:(UITapGestureRecognizer *)aTap
+{
+    if (aTap.state == UIGestureRecognizerStateEnded) {
+        [self.fullImageView removeFromSuperview];
+    }
 }
 
 #pragma mark - ChatBarDelegate
@@ -428,11 +574,25 @@
 #pragma mark - EMMessageCellDelegate
 - (void)messageCellDidSelected:(EMMessageCell *)aCell
 {
-    
+    // 图片消息需要点击放大
+    if(aCell.model.emModel) {
+        if(aCell.model.emModel.body.type == EMMessageTypeImage) {
+            UIWindow * window=[[[UIApplication sharedApplication] delegate] window];
+            EMImageMessageBody* imageBody = (EMImageMessageBody*)aCell.model.emModel.body;
+            if(imageBody.remotePath.length > 0) {
+                NSURL* url = [NSURL URLWithString:imageBody.remotePath];
+                if(url) {
+                    [self.fullImageView sd_setImageWithURL:url completed:nil];
+                    [window addSubview:self.fullImageView];
+                    self.fullImageView.frame = window.frame;
+                }
+            }
+        }
+    }
 }
 
 
-- (void)recallMenuItemAction:(UIMenuItem *)aItem
+- (void)recallMenuItemAction:(UIMenuController *)aItem
 {
     if (self.menuIndexPath == nil) {
         return;
@@ -464,15 +624,59 @@
     self.menuIndexPath = nil;
 }
 
+- (void)deleteMenuItemAction:(UIMenuController *)aItem
+{
+    if (self.menuIndexPath == nil) {
+        return;
+    }
+    NSIndexPath *indexPath = self.menuIndexPath;
+    __weak typeof(self) weakself = self;
+    EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
+    [self.chatManager deleteMessage:model.emModel.messageId];
+    self.menuIndexPath = nil;
+}
+
+- (void)muteMenuItemAction:(UIMenuController *)aItem
+{
+    if (self.menuIndexPath == nil) {
+        return;
+    }
+    NSIndexPath *indexPath = self.menuIndexPath;
+    __weak typeof(self) weakself = self;
+    EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
+    if([self.muteMenuItem.title isEqualToString:[ChatWidget LocalizedString:@"ChatMute"]]) {
+        [self.chatManager muteMember:model.emModel.from mute:YES];
+    }else{
+        [self.chatManager muteMember:model.emModel.from mute:NO];
+    }
+    
+    self.menuIndexPath = nil;
+    
+}
+
 - (void)_showMenuViewController:(EMMessageCell *)aCell
-                          model:(EMMessageModel *)aModel
+                          model:(EMMessageModel *)aModel isAvatar:(BOOL)isAvatar
 {
     [self becomeFirstResponder];
     
     NSMutableArray *items = [[NSMutableArray alloc] init];
-    if (aModel.emModel.direction == EMMessageDirectionSend) {
-        [items addObject:self.recallMenuItem];
+    if(isAvatar) {
+        [items addObject:self.muteMenuItem];
+        if([self.chatManager.muteMembers containsObject: aModel.emModel.from]) {
+            self.muteMenuItem.title = [ChatWidget LocalizedString:@"ChatUnmute"];
+        }else{
+            self.muteMenuItem.title = [ChatWidget LocalizedString:@"ChatMute"];
+        }
+    }else{
+        if (aModel.emModel.direction == EMMessageDirectionSend) {
+            [items addObject:self.recallMenuItem];
+        }else{
+            if(ROLE_IS_TEACHER(self.chatManager.user.role)){
+                [items addObject:self.deleteMenuItem];
+            }
+        }
     }
+    
     
     [self.menuController setMenuItems:items];
     [self.menuController setTargetRect:aCell.bubbleView.frame inView:aCell];
@@ -481,9 +685,8 @@
 
 - (void)messageCellDidLongPress:(EMMessageCell *)aCell
 {
-    return;
     self.menuIndexPath = [self.tableView indexPathForCell:aCell];
-    [self _showMenuViewController:aCell model:aCell.model];
+    [self _showMenuViewController:aCell model:aCell.model isAvatar:NO];
 }
 
 - (void)messageCellDidResend:(EMMessageModel *)aModel
@@ -494,6 +697,38 @@
 - (void)messageReadReceiptDetil:(EMMessageCell *)aCell
 {
     
+}
+
+- (void)messageCellDidLongPressAvatar:(EMMessageCell *)aCell gestureRecognizer:(UILongPressGestureRecognizer*)gestureRecognizer
+{
+    if([self.chatManager.admins containsObject:aCell.model.emModel.from])
+        return;
+    CGPoint pt = [gestureRecognizer locationInView:self];
+    self.menuIndexPath = [self.tableView indexPathForCell:aCell];
+    [self _showMenuViewController:aCell model:aCell.model isAvatar:YES];
+}
+
+- (void)imageDataWillSend:(NSData*)aImageData
+{
+    [self.delegate imageDataWillSend:aImageData isQA:NO];
+}
+
+#pragma mark - EMMessageCellStringDelegate
+- (void)reeditMsgId:(NSString *)aMsgId
+{
+    if(!ROLE_IS_TEACHER(self.chatManager.user.role) && (self.chatBar.isMuted || self.chatBar.isAllMuted))
+        return;
+        
+    if(aMsgId.length > 0) {
+        EMMessage* msg = [[[EMClient sharedClient] chatManager] getMessageWithMessageId:aMsgId];
+        if(msg.body.type == EMMessageTypeText) {
+            EMTextMessageBody* textBody = (EMTextMessageBody*)msg.body;
+            [self.chatBar.inputButton setTitle:textBody.text forState:UIControlStateNormal];
+            self.chatBar.inputingView.inputField.text = textBody.text;
+        }
+        if([self.chatBar respondsToSelector:@selector(InputAction)])
+            [self.chatBar performSelector:@selector(InputAction)];
+    }
 }
 
 @end

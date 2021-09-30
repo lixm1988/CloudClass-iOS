@@ -66,7 +66,7 @@ import Foundation
     // 用户名字
     public var userName: String = ""
     // 用户角色
-    public var role: AgoraEduContextUserRole = .student
+    public var role: AgoraEduContextUserRole = .assistant
     // 用户属性
     public var userProperties: [String : Any]?
 }

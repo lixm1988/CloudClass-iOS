@@ -9,12 +9,23 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol AnnouncementViewDelegate <NSObject>
+
+- (void)PublishAnnouncement:(NSString*)aText;
+
+@end
+
 @interface NilAnnouncementView : UIView
 @end
 
-@interface AnnouncementView : UIView
-@property (nonatomic,strong) NSString* announcement;
+@interface EditAnnouncementView : UIView
+@end
 
+@interface AnnouncementView : UIView
+- (instancetype)initWithFrame:(CGRect)frame role:(NSInteger)role;
+@property (nonatomic,strong) NSString* announcement;
+@property (nonatomic) NSInteger role;
+@property (nonatomic,weak) id<AnnouncementViewDelegate> delegate;
 @end
 
 NS_ASSUME_NONNULL_END

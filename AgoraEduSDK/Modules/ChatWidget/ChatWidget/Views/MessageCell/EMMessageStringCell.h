@@ -10,11 +10,21 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol EMMessageStringCellDelegate <NSObject>
+
+- (void)reeditMsgId:(NSString*)aMsgId;
+
+@end
+
 @interface EMMessageStringCell : UITableViewCell
+
+@property (nonatomic,weak) id<EMMessageStringCellDelegate> delegate;
 
 @property (nonatomic, strong) UILabel *stringLabel;
 
 @property (nonatomic, strong) UIImageView *preImageView;
+
+@property (nonatomic, strong) NSString* recallMsgId;
 
 - (void)updatetext:(NSString*)aText;
 

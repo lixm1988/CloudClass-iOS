@@ -7,7 +7,10 @@
 */
 
 ChatText = "Chat";
+ChatQA = "Q&A";
 ChatAnnouncement = "Notice";
+ChatMembers= "Members";
+ChatSearch= "Search";
 ChatTeacher = "Teacher";
 ChatAssistant = "Assistant";
 ChatEmptyText = "No Message";
@@ -15,7 +18,7 @@ ChatPlaceholderText = "Input";
 ChatNoAnnouncement = "No Notice";
 ChatSendText = "Send";
 ChatAllMute = "All Mute";
-ChatMute = "You are muted by teacher";
+ChatMuteText = "You are muted by teacher";
 ChatLoginFaild = "Login failed";
 ChatJoinFaild = "Join failed";
 ChatSendFaildByMute = "Send faild,you have been muted";
@@ -29,3 +32,12 @@ ChatRecall = "Recall";
 ChatRecallAMessage = "Recall a message";
 ChatMutedByTeacher = "muted by %@ teacher";
 ChatUnmutedByTeacher = "unmuted by %@ teacher";
+ChatPublish = "Publish";
+ChatUpdate = "Update";
+ChatRemove = "Remove";
+ChatSave = "Publish";
+ChatCancel = "Cancel";
+ChatEmptyQA = "NO Q&A messages";
+ChatUserRecallMsg = "recall a message";
+ChatMute = "mute";
+ChatUnmute = "unmute";

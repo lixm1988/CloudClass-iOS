@@ -148,7 +148,7 @@ static AgoraEduManager *manager = nil;
     
     AgoraWEAK(self);
     AgoraRTEClassroomJoinOptions *options = [[AgoraRTEClassroomJoinOptions alloc] initWithUserName:userName
-                                                                                              role:AgoraRTERoleTypeStudent];
+                                                                                              role:AgoraRTERoleTypeAssistant];
     // 大班课不自动发流
     if (sceneType == AgoraRTESceneTypeBig || sceneType == AgoraRTESceneTypeBreakout || sceneType == AgoraRTESceneTypeMedium) {
         options.mediaOption.autoPublish = NO;

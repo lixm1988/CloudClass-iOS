@@ -37,7 +37,7 @@
     if (_label == nil) {
         _label = [[UILabel alloc] init];
         _label.textColor = [UIColor grayColor];
-        _label.font = [UIFont systemFontOfSize:13];
+        _label.font = [UIFont systemFontOfSize:12];
     }
     
     return _label;

@@ -327,14 +327,21 @@ extension AgoraUIManager: AgoraEduRoomHandler {
         properties["roomUuid"] = roomInfo.roomUuid
         properties["roomName"] = roomInfo.roomName
         properties["password"] = userInfo.userUuid
+        properties["role"] = userInfo.role.rawValue;
         properties["avatarurl"] = avatarurl
         
         if let imProperties = contextPool.widget.getAgoraWidgetProperties(type: .im),
            let hxProperties = imProperties["huanxin"] as? [String: Any],
            let appKey = hxProperties["appKey"] as? String,
+           
            let chatRoomId = hxProperties["chatRoomId"] as? String {
             properties["appkey"] = appKey
             properties["chatRoomId"] = chatRoomId
+        }
+        if let imProperties = contextPool.widget.getAgoraWidgetProperties(type: .im),
+           let hxProperties = imProperties["huanxin"] as? [String: Any],
+           let privateChatRoom = hxProperties["privateChatRoom"] as? [String:Any] {
+            properties["privateChatRoom"] = privateChatRoom
         }
         
         info.properties = properties

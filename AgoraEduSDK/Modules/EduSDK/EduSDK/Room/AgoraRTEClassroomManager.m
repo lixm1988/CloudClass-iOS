@@ -153,13 +153,14 @@ typedef void (^OnJoinRoomSuccessBlock)(AgoraRTEUserService *userService, UInt64 
         params[@"role"] = kAgoraRTEServiceRoleAudience;
         
     } else if(options.role == AgoraRTERoleTypeStudent) {
-        if(self.sceneType == AgoraRTESceneTypeBig
-           || self.sceneType == AgoraRTESceneTypeMedium
-           || self.sceneType == AgoraRTESceneTypeBreakout) {
-            params[@"role"] = kAgoraRTEServiceRoleAudience;
-        } else {
-            params[@"role"] = kAgoraRTEServiceRoleBroadcaster;
-        }
+        params[@"role"] = kAgoraRTEServiceRoleAssistant;
+//        if(self.sceneType == AgoraRTESceneTypeBig
+//           || self.sceneType == AgoraRTESceneTypeMedium
+//           || self.sceneType == AgoraRTESceneTypeBreakout) {
+//            params[@"role"] = kAgoraRTEServiceRoleAudience;
+//        } else {
+//            params[@"role"] = kAgoraRTEServiceRoleBroadcaster;
+//        }
     }
     params[@"streamUuid"] = @(options.mediaOption.primaryStreamId);
     if (options.mediaOption.autoPublish){

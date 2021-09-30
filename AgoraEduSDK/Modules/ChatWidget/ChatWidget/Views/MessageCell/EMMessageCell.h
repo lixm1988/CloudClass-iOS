@@ -44,6 +44,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)messageReadReceiptDetil:(EMMessageCell *)aCell;
 
+- (void)messageCellDidLongPressAvatar:(EMMessageCell *)aCell gestureRecognizer:(UILongPressGestureRecognizer *)aLongPress;
+
 @end
 
 NS_ASSUME_NONNULL_END

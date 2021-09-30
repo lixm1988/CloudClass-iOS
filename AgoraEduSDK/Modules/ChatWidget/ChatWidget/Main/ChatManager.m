@@ -14,6 +14,7 @@ const static NSString* kMsgType = @"msgtype";
 const static NSString* kAvatarUrl = @"avatarUrl";
 const static NSString* kNickName = @"nickName";
 const static NSString* kRoomUuid = @"roomUuid";
+const static NSString* kAsker = @"asker";
 
 static BOOL isSDKInited = NO;
 
@@ -25,8 +26,10 @@ static BOOL isSDKInited = NO;
 @property (nonatomic,strong) NSLock* dataLock;
 @property (nonatomic,strong) NSLock* askAndAnswerMsgLock;
 @property (nonatomic,strong) EMChatroom* chatRoom;
+@property (nonatomic,strong) EMChatroom* qaChatRoom;
 @property (nonatomic,strong) NSMutableArray<EMMessage*>* askAndAnswerMsgs;
 @property (nonatomic,strong) NSString* latestMsgId;
+@property (nonatomic,strong) NSString* latestQAMsgId;
 @end
 
 @implementation ChatManager
@@ -51,6 +54,7 @@ static BOOL isSDKInited = NO;
 {
     EMOptions* option = [EMOptions optionsWithAppkey:self.appkey];
     option.enableConsoleLog = YES;
+    option.usingHttpsOnly = YES;
     option.isAutoLogin = NO;
     [[EMClient sharedClient] initializeSDKWithOptions:option];
     [[EMClient sharedClient] addDelegate:self delegateQueue:nil];
@@ -97,12 +101,51 @@ static BOOL isSDKInited = NO;
     [[EMClient sharedClient].roomManager removeDelegate:self];
     [[EMClient sharedClient] logout:NO];
     self.latestMsgId = @"";
+    self.latestQAMsgId = @"";
+}
+
+- (NSMutableArray*)members
+{
+    if(!_members) {
+        _members = [NSMutableArray array];
+    }
+    return _members;
+}
+
+- (NSMutableArray*)admins
+{
+    if(!_admins) {
+        _admins = [NSMutableArray array];
+    }
+    return _admins;
+}
+
+- (NSMutableArray*)muteMembers
+{
+    if(!_muteMembers) {
+        _muteMembers = [NSMutableArray array];
+    }
+    return _muteMembers;
 }
 
 - (void)setIsLogin:(BOOL)isLogin
 {
     _isLogin = isLogin;
     if(_isLogin) {
+        EMUserInfo* userInfo = [[EMUserInfo alloc] init];
+        NSDictionary* extDic = @{@"role":[NSNumber numberWithInteger:self.user.role]};
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:extDic options:0 error:nil];
+        NSString* str = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+        userInfo.ext = str;
+        if(self.user.avatarurl.length > 0)
+            userInfo.avatarUrl = self.user.avatarurl;
+        if(self.user.nickname.length > 0)
+            userInfo.nickName = self.user.nickname ;
+        
+        [[[EMClient sharedClient] userInfoManager] updateOwnUserInfo:userInfo completion:^(EMUserInfo *aUserInfo, EMError *aError) {
+                        
+        }];
+        
         if(self.chatRoomId.length > 0) {
             __weak typeof(self) weakself = self;
             weakself.state = ChatRoomStateJoining;
@@ -116,19 +159,59 @@ static BOOL isSDKInited = NO;
                 }
             }];
         }
-        EMUserInfo* userInfo = [[EMUserInfo alloc] init];
-        NSDictionary* extDic = @{@"role":@2};
-        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:extDic options:0 error:nil];
-        NSString* str = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-        userInfo.ext = str;
-        if(self.user.avatarurl.length > 0)
-            userInfo.avatarUrl = self.user.avatarurl;
-        if(self.user.nickname.length > 0)
-            userInfo.nickName = self.user.nickname ;
-        
-        [[[EMClient sharedClient] userInfoManager] updateOwnUserInfo:userInfo completion:^(EMUserInfo *aUserInfo, EMError *aError) {
-                        
-        }];
+        if(self.enableQAChatroom && self.qaChatRoomId.length > 0) {
+            __weak typeof(self) weakself = self;
+            weakself.state = ChatRoomStateJoining;
+            [[EMClient sharedClient].roomManager joinChatroom:self.qaChatRoomId completion:^(EMChatroom *aChatroom, EMError *aError) {
+                if(!aError) {
+                    self.qaChatRoom = aChatroom;
+                    [weakself fetchQAMessage];
+                }else{
+                    //weakself.state = ChatRoomStateJoinFail;
+                }
+            }];
+        }
+    }
+}
+
+- (void)fetchQAMessage
+{
+    EMCursorResult* result =  [[[EMClient sharedClient] chatManager] fetchHistoryMessagesFromServer:self.qaChatRoomId conversationType:EMConversationTypeGroupChat startMessageId:@"" pageSize:50 error:nil];
+    if(result.list.count > 0){
+        if(self.latestQAMsgId.length > 0)
+        {
+            NSArray* arr = [[result.list reverseObjectEnumerator] allObjects];
+            NSMutableArray* msgToAdd = [NSMutableArray array];
+            for (EMMessage* msg in arr) {
+                if([msg.messageId isEqualToString:self.latestQAMsgId]) {
+                    if(self.askAndAnswerMsgs.count > 0){
+                        [self.delegate qaMessageDidReceive];
+                    }
+                    return;
+                }else{
+                    NSDictionary* ext  = msg.ext;
+                    NSNumber* msgType = [ext objectForKey:kMsgType];
+                    NSString* asker = [ext objectForKey:kAsker];
+                    if(ROLE_IS_TEACHER(self.userConfig.role) || (msgType && msgType.integerValue > 0 && [asker isEqualToString:[EMClient sharedClient].currentUsername])) {
+                        [self.askAndAnswerMsgs insertObject:msg atIndex:0];
+                    }
+                }
+            }
+        }else{
+            for(EMMessage* msg in result.list) {
+                NSDictionary* ext  = msg.ext;
+                NSNumber* msgType = [ext objectForKey:kMsgType];
+                NSString* asker = [ext objectForKey:kAsker];
+                if(ROLE_IS_TEACHER(self.userConfig.role) ||  (msgType && msgType.integerValue > 0 && [asker isEqualToString:[EMClient sharedClient].currentUsername])) {
+                    [self.askAndAnswerMsgs addObject:msg];
+                }
+            }
+            EMMessage* lastMsg = [result.list lastObject];
+            if(lastMsg)
+                self.latestQAMsgId = lastMsg.messageId;
+            if(self.askAndAnswerMsgs.count > 0)
+                [self.delegate qaMessageDidReceive];
+        }
     }
 }
 
@@ -141,8 +224,17 @@ static BOOL isSDKInited = NO;
         {
             weakself.chatRoom = aChatroom;
             weakself.isAllMuted = aChatroom.isMuteAllMembers;
+            weakself.admins  = aChatroom.adminList;
+            weakself.members = aChatroom.memberList;
+            for(NSString* admin in weakself.admins) {
+                [weakself.members removeObject:admin];
+            }
+            
             if(weakself.isAllMuted)
                 [weakself.delegate mutedStateDidChanged];
+            if(![weakself.members containsObject:[EMClient sharedClient].currentUsername] && !ROLE_IS_TEACHER(weakself.user.role))
+                [weakself.members addObject:[EMClient sharedClient].currentUsername];
+            [weakself.delegate membersDidChanged];
         }
     }];
     EMCursorResult* result =  [[[EMClient sharedClient] chatManager] fetchHistoryMessagesFromServer:self.chatRoomId conversationType:EMConversationTypeGroupChat startMessageId:@"" pageSize:50 error:nil];
@@ -156,17 +248,19 @@ static BOOL isSDKInited = NO;
                     if(self.dataArray.count > 0){
                         [self.delegate chatMessageDidReceive];
                     }
-                    return;
                 }else{
                     [self.dataArray insertObject:msg atIndex:0];
                 }
             }
         }else{
-            [weakself.dataArray addObjectsFromArray:result.list];
+            for(EMMessage* msg in result.list) {
+                [self.dataArray addObject:msg];
+            }
             EMMessage* lastMsg = [result.list lastObject];
             if(lastMsg)
                 self.latestMsgId = lastMsg.messageId;
-            [weakself.delegate chatMessageDidReceive];
+            if(self.dataArray.count > 0)
+                [weakself.delegate chatMessageDidReceive];
         }
     }
     // 获取是否被禁言
@@ -184,6 +278,17 @@ static BOOL isSDKInited = NO;
             [weakself.delegate announcementDidChanged:aAnnouncement isFirst:YES];
         }
     }];
+    
+    if(ROLE_IS_TEACHER(self.user.role)) {
+        [[[EMClient sharedClient] roomManager] getChatroomWhiteListFromServerWithId:self.chatRoomId completion:^(NSArray *aList, EMError *aError) {
+            if(!aError) {
+                weakself.muteMembers = [aList mutableCopy];
+                [weakself.muteMembers removeObjectsInArray:weakself.admins];
+                if(weakself.delegate)
+                    [weakself.delegate muteMembersDidChannged];
+            }
+        }];
+    }
 }
 
 - (NSMutableArray<EMMessage*>*)dataArray
@@ -200,6 +305,15 @@ static BOOL isSDKInited = NO;
     NSArray<EMMessage*> * array = [self.dataArray copy];
     [self.dataArray removeAllObjects];
     [self.dataLock unlock];
+    return array;
+}
+
+- (NSArray<EMMessage*> *)qaArray
+{
+    [self.askAndAnswerMsgLock lock];
+    NSArray<EMMessage*> * array = [self.askAndAnswerMsgs copy];
+    [self.askAndAnswerMsgs removeAllObjects];
+    [self.askAndAnswerMsgLock unlock];
     return array;
 }
 
@@ -235,15 +349,7 @@ static BOOL isSDKInited = NO;
     return _askAndAnswerMsgLock;
 }
 
-- (void)sendCommonTextMsg:(NSString*)aText
-{
-    [self sendTextMsg:aText msgType:ChatMsgTypeCommon];
-}
-- (void)sendAskMsgText:(NSString*)aText
-{
-    [self sendTextMsg:aText msgType:ChatMsgTypeAsk];
-}
-- (void)sendTextMsg:(NSString*)aText msgType:(ChatMsgType)aType
+- (void)sendTextMsg:(NSString*)aText msgType:(ChatMsgType)aType asker:(NSString*)aAsker
 {
     if(aText.length > 0  && self.isLogin) {
         if(self.user.avatarurl.length <= 0) {
@@ -252,8 +358,7 @@ static BOOL isSDKInited = NO;
         NSString* retStr = [EMEmojiHelper convertEmojiToKeys:aText];
         EMTextMessageBody* textBody = [[EMTextMessageBody alloc] initWithText:retStr];
         NSMutableDictionary* ext = [@{kMsgType:[NSNumber numberWithInteger: aType],
-                                      @"role": [NSNumber numberWithInteger:self.user.role],
-                                      kAvatarUrl: self.user.avatarurl} mutableCopy];
+                                      @"role": [NSNumber numberWithInteger:self.user.role]} mutableCopy];
         if(self.user.nickname.length > 0 ){
             [ext setObject:self.user.nickname forKey:kNickName];
         }
@@ -263,8 +368,14 @@ static BOOL isSDKInited = NO;
         if(self.user.roomUuid.length > 0) {
             [ext setObject:self.user.roomUuid forKey:kRoomUuid];
         }
-        
-        EMMessage* msg = [[EMMessage alloc] initWithConversationID:self.chatRoomId from:self.user.username to:self.chatRoomId body:textBody ext:ext];
+        if(aType != ChatMsgTypeCommon) {
+            if(aAsker.length > 0) {
+                [ext setObject:aAsker forKey:kAsker];
+            }else
+                [ext setObject:[EMClient sharedClient].currentUsername forKey:kAsker];
+        }
+        NSString* convId = aType == ChatMsgTypeCommon ?  self.chatRoomId : self.qaChatRoomId;
+        EMMessage* msg = [[EMMessage alloc] initWithConversationID:convId from:[EMClient sharedClient].currentUsername to:convId body:textBody ext:ext];
         msg.chatType = EMChatTypeChatRoom;
         __weak typeof(self) weakself = self;
         [[EMClient sharedClient].chatManager sendMessage:msg progress:^(int progress) {
@@ -275,11 +386,8 @@ static BOOL isSDKInited = NO;
                             if([weakself.delegate respondsToSelector:@selector(chatMessageDidSend:)]){
                                 [weakself.delegate chatMessageDidSend:message];
                             }
-                        }
-                        if(aType == ChatMsgTypeAsk) {
-                            [weakself.askAndAnswerMsgLock lock];
-                            [weakself.askAndAnswerMsgs addObject:message];
-                            [weakself.askAndAnswerMsgLock unlock];
+                        }else {
+                            [weakself.delegate qaMessageDidSend:msg];
                         }
                     }else{
                         if(error.code == EMErrorMessageIncludeIllegalContent)
@@ -301,6 +409,153 @@ static BOOL isSDKInited = NO;
                     }
                 }];
     }
+}
+
+- (void)sendImageMsgWithData:aImageData msgType:(ChatMsgType)aType asker:(NSString *)aAsker
+{
+    EMImageMessageBody *body = [[EMImageMessageBody alloc] initWithData:aImageData displayName:@"image"];
+    NSString *from = [[EMClient sharedClient] currentUsername];
+    NSString *to = self.chatRoomId;
+    NSMutableDictionary* ext = [@{kMsgType:[NSNumber numberWithInteger: aType],
+                                  @"role": [NSNumber numberWithInteger:self.user.role]} mutableCopy];
+    if(self.user.nickname.length > 0 ){
+        [ext setObject:self.user.nickname forKey:kNickName];
+    }
+    if(self.user.avatarurl.length > 0 ){
+        [ext setObject:self.user.avatarurl forKey:kAvatarUrl];
+    }
+    if(self.user.roomUuid.length > 0) {
+        [ext setObject:self.user.roomUuid forKey:kRoomUuid];
+    }
+    if(aType != ChatMsgTypeCommon) {
+        if(aAsker.length > 0) {
+            [ext setObject:aAsker forKey:kAsker];
+        }else
+            [ext setObject:[EMClient sharedClient].currentUsername forKey:kAsker];
+    }
+    
+    EMMessage *message = [[EMMessage alloc] initWithConversationID:to from:from to:to body:body ext:ext];
+    
+    message.chatType = EMChatTypeChatRoom;
+    message.status = EMMessageStatusDelivering;
+    
+    [[EMClient sharedClient].chatManager sendMessage:message progress:nil completion:^(EMMessage *message, EMError *error) {
+        if(!error) {
+            if(aType != ChatMsgTypeCommon)
+                [self.delegate qaMessageDidSend:message];
+            else
+                [self.delegate chatMessageDidSend:message];
+        }else{
+            [self.delegate exceptionDidOccur:error.errorDescription];
+        }
+    }];
+}
+
+- (void)muteAll:(BOOL)aMuteAll
+{
+    __weak typeof(self) weakself = self;
+    if(aMuteAll) {
+        [[[EMClient sharedClient] roomManager] muteAllMembersFromChatroom:self.chatRoomId completion:^(EMChatroom *aChatroom, EMError *aError) {
+            if(!aError) {
+                weakself.isAllMuted = YES;
+                if(weakself.delegate)
+                    [weakself.delegate mutedStateDidChanged];
+                [weakself sendMuteAllMsg:YES];
+            }
+        }];
+    }else{
+        [[[EMClient sharedClient] roomManager] unmuteAllMembersFromChatroom:self.chatRoomId completion:^(EMChatroom *aChatroom, EMError *aError) {
+            if(!aError) {
+                weakself.isAllMuted = NO;
+                if(weakself.delegate)
+                    [weakself.delegate mutedStateDidChanged];
+                [weakself sendMuteAllMsg:NO];
+            }
+        }];
+    }
+}
+
+- (void)muteMember:(NSString*)aUserId mute:(BOOL)aMute
+{
+    if(aUserId.length <= 0)
+        return;
+    __weak typeof(self) weakself = self;
+    if(aMute) {
+        [[[EMClient sharedClient] roomManager] addWhiteListMembers:@[aUserId] fromChatroom:self.chatRoomId completion:^(EMChatroom *aChatroom, EMError *aError) {
+            [weakself.muteMembers addObject:aUserId];
+            if(weakself.delegate)
+                [weakself.delegate muteMembersDidChannged];
+        }];
+    }else{
+        [[[EMClient sharedClient] roomManager] removeWhiteListMembers:@[aUserId] fromChatroom:self.chatRoomId completion:^(EMChatroom *aChatroom, EMError *aError) {
+            [weakself.muteMembers removeObject:aUserId];
+            if(weakself.delegate)
+                [weakself.delegate muteMembersDidChannged];
+        }];
+    }
+}
+
+- (void)deleteMessage:(NSString*)aMsgId
+{
+    if(aMsgId.length <= 0)
+        return;
+    EMCmdMessageBody* cmdBody = [[EMCmdMessageBody alloc] initWithAction:@"DEL"];
+    NSMutableDictionary*ext = [@{kRoomUuid:self.user.roomUuid,kMsgType:@1,@"msgId":aMsgId} mutableCopy];
+    if(self.user.nickname.length > 0) {
+        [ext setObject:self.user.nickname forKey:kNickName];
+    }
+    if(self.user.avatarurl.length > 0) {
+        [ext setObject:self.user.avatarurl forKey:kAvatarUrl];
+    }
+    
+    EMMessage * msg = [[EMMessage alloc] initWithConversationID:self.chatRoomId from:self.user.username to:self.chatRoomId body:cmdBody ext:ext];
+    msg.chatType = EMChatTypeChatRoom;
+    __weak typeof(self) weakself = self;
+    [[[EMClient sharedClient] chatManager] sendMessage:msg progress:nil completion:^(EMMessage *message, EMError *error) {
+        if(!error) {
+            if(weakself.delegate) {
+                [weakself.delegate chatMessageDidSend:msg];
+            }
+        }
+        
+    }];
+}
+
+- (void)sendMuteAllMsg:(BOOL)aMuteAll
+{
+    NSString* action = aMuteAll?@"setAllMute":@"removeAllMute";
+    EMCmdMessageBody* cmdBody = [[EMCmdMessageBody alloc] initWithAction:action];
+    NSMutableDictionary*ext = [@{kRoomUuid:self.user.roomUuid,kMsgType:@1} mutableCopy];
+    if(self.user.nickname.length > 0) {
+        [ext setObject:self.user.nickname forKey:kNickName];
+    }
+    if(self.user.avatarurl.length > 0) {
+        [ext setObject:self.user.avatarurl forKey:kAvatarUrl];
+    }
+    EMMessage * msg = [[EMMessage alloc] initWithConversationID:self.chatRoomId from:self.user.username to:self.chatRoomId body:cmdBody ext:ext];
+    msg.chatType = EMChatTypeChatRoom;
+    __weak typeof(self) weakself = self;
+    [[[EMClient sharedClient] chatManager] sendMessage:msg progress:nil completion:^(EMMessage *message, EMError *error) {
+        if(!error) {
+            if(weakself.delegate) {
+                [weakself.delegate chatMessageDidSend:msg];
+            }
+        }
+        
+    }];
+}
+
+- (void)publishAnnouncement:(NSString*)aAnnouncement
+{
+    __weak typeof(self) weakself = self;
+    [[[EMClient sharedClient] roomManager] updateChatroomAnnouncementWithId:self.chatRoomId announcement:aAnnouncement completion:^(EMChatroom *aChatroom, EMError *aError) {
+            if(!aError) {
+                weakself.chatroomAnnouncement = aAnnouncement;
+                if(weakself.delegate) {
+                    [weakself.delegate announcementDidChanged:aAnnouncement isFirst:NO];
+                }
+            }
+    }];
 }
 
 - (ChatUserConfig*)userConfig
@@ -334,6 +589,8 @@ static BOOL isSDKInited = NO;
         [[EMClient sharedClient].roomManager joinChatroom:self.chatRoomId completion:^(EMChatroom *aChatroom, EMError *aError) {
             if(!aError || aError.code == EMErrorGroupAlreadyJoined) {
                 [weakself fetchChatroomData];
+                if(weakself.enableQAChatroom)
+                    [weakself fetchQAMessage];
             }else{
                 weakself.state = ChatRoomStateJoinFail;
             }
@@ -354,43 +611,32 @@ static BOOL isSDKInited = NO;
 #pragma mark - EMChatManagerDelegate
 - (void)messagesDidReceive:(NSArray *)aMessages
 {
-    BOOL aInsertCommonMsg = NO;
     for (EMMessage* msg in aMessages) {
-        // 判断聊天室消息
-        if(msg.chatType == EMChatTypeChatRoom && [msg.to isEqualToString:self.chatRoomId]) {
-            // 文本消息
-            if(msg.body.type == EMMessageBodyTypeText) {
-                NSDictionary* ext = msg.ext;
-                NSNumber* msgType = [ext objectForKey:kMsgType];
-                EMTextMessageBody* textBody = (EMTextMessageBody*)msg.body;
-                // 普通消息
-                //if(msgType.integerValue == ChatMsgTypeCommon) {
-                    if([textBody.text length] > 0)
-                    {
-                        NSString* avatarUrl = [ext objectForKey:kAvatarUrl];
-                        [self.dataLock lock];
-                        [self.dataArray addObject:msg];
-                        self.latestMsgId = msg.messageId;
-                        [self.dataLock unlock];
-                        aInsertCommonMsg = YES;
-                    }
-               // }
-//                // 问答消息
-//                if(msgType.integerValue == ChatMsgAnswer) {
-//                    NSString* asker = [ext objectForKey:@"asker"];
-//                    if([asker isEqualToString:self.user.username]) {
-//                        [self.askAndAnswerMsgLock lock];
-//                        [self.askAndAnswerMsgs addObject:msg];
-//                        [self.askAndAnswerMsgLock unlock];
-//                    }
-//                }
+        // 文本消息,图片消息
+        if(msg.body.type == EMMessageBodyTypeText || msg.body.type == EMMessageBodyTypeImage) {
+            if(msg.chatType == EMChatTypeChatRoom && [msg.to isEqualToString:self.chatRoomId]) {
+                [self.dataLock lock];
+                [self.dataArray addObject:msg];
+                self.latestMsgId = msg.messageId;
+                [self.dataLock unlock];
+            }
+            if(msg.chatType == EMChatTypeChatRoom && [msg.to isEqualToString:self.qaChatRoomId]) {
+                [self.askAndAnswerMsgLock lock];
+                [self.askAndAnswerMsgs addObject:msg];
+                self.latestQAMsgId = msg.messageId;
+                [self.askAndAnswerMsgLock unlock];
             }
         }
     }
-    if(aInsertCommonMsg) {
+    if(self.dataArray.count > 0) {
         // 这里需要读取消息展示
         if([self.delegate respondsToSelector:@selector(chatMessageDidReceive)]) {
             [self.delegate chatMessageDidReceive];
+        }
+    }
+    if(self.askAndAnswerMsgs.count > 0) {
+        if([self.delegate respondsToSelector:@selector(qaMessageDidReceive)]) {
+            [self.delegate qaMessageDidReceive];
         }
     }
 }
@@ -463,13 +709,44 @@ static BOOL isSDKInited = NO;
 - (void)userDidJoinChatroom:(EMChatroom *)aChatroom
                        user:(NSString *)aUsername
 {
-    
+    if([aChatroom.chatroomId isEqualToString:self.chatRoomId] && ![self.members containsObject:aUsername] && ![self.admins containsObject:aUsername]) {
+        [self.members addObject:aUsername];
+        [self.members removeObjectsInArray:self.admins];
+        if(self.delegate && [self.delegate respondsToSelector:@selector(membersDidChanged)])
+            [self.delegate membersDidChanged];
+    }
 }
 
 - (void)userDidLeaveChatroom:(EMChatroom *)aChatroom
                         user:(NSString *)aUsername
 {
-    
+    if([aChatroom.chatroomId isEqualToString:self.chatRoomId] && [self.members containsObject:aUsername]) {
+        [self.members removeObject:aUsername];
+        [self.admins removeObject:aUsername];
+        if(self.delegate && [self.delegate respondsToSelector:@selector(membersDidChanged)])
+            [self.delegate membersDidChanged];
+    }
+}
+
+- (void)chatroomAdminListDidUpdate:(EMChatroom *)aChatroom
+                        addedAdmin:(NSString *)aAdmin
+{
+    if(![self.admins containsObject:aAdmin]) {
+        [self.admins addObject:aAdmin];
+        [self.members removeObjectsInArray:self.admins];
+        if(self.delegate && [self.delegate respondsToSelector:@selector(membersDidChanged)])
+            [self.delegate membersDidChanged];
+    }
+}
+
+- (void)chatroomAdminListDidUpdate:(EMChatroom *)aChatroom
+                        removedAdmin:(NSString *)aAdmin
+{
+    if([aChatroom.chatroomId isEqualToString:self.chatRoomId] && [self.admins containsObject:aAdmin]) {
+        [self.admins removeObject:aAdmin];
+        if(self.delegate && [self.delegate respondsToSelector:@selector(membersDidChanged)])
+            [self.delegate membersDidChanged];
+    }
 }
 
 - (void)didDismissFromChatroom:(EMChatroom *)aChatroom
@@ -494,7 +771,7 @@ static BOOL isSDKInited = NO;
              addedWhiteListMembers:(NSArray *)aMembers
 {
     if([aChatroom.chatroomId isEqualToString:self.chatRoomId]) {
-        if(aMembers.count > 0 && [aMembers containsObject:self.user.username]) {
+        if(aMembers.count > 0 && [aMembers containsObject:[EMClient sharedClient].currentUsername]) {
             self.isMuted = YES;
             if(self.delegate)
                 [self.delegate mutedStateDidChanged];
@@ -506,7 +783,7 @@ static BOOL isSDKInited = NO;
            removedWhiteListMembers:(NSArray *)aMembers
 {
     if([aChatroom.chatroomId isEqualToString:self.chatRoomId]){
-        if(aMembers.count > 0 && [aMembers containsObject:self.user.username]) {
+        if(aMembers.count > 0 && [aMembers containsObject:[EMClient sharedClient].currentUsername]) {
             self.isMuted = NO;
             if(self.delegate)
                 [self.delegate mutedStateDidChanged];
