@@ -17,8 +17,6 @@
 
 @interface EMMessageCell()
 
-@property (nonatomic, strong) UIImageView *avatarView;
-
 @property (nonatomic, strong) UILabel *nameLabel;
 
 @property (nonatomic, strong) EMMessageStatusView *statusView;

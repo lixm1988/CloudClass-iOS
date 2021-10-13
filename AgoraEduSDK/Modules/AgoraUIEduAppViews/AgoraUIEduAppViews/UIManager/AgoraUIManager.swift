@@ -333,15 +333,11 @@ extension AgoraUIManager: AgoraEduRoomHandler {
         if let imProperties = contextPool.widget.getAgoraWidgetProperties(type: .im),
            let hxProperties = imProperties["huanxin"] as? [String: Any],
            let appKey = hxProperties["appKey"] as? String,
-           
+           let privateChatRoom = hxProperties["privateChatRoom"] as? [String:Any],
            let chatRoomId = hxProperties["chatRoomId"] as? String {
             properties["appkey"] = appKey
-            properties["chatRoomId"] = chatRoomId
-        }
-        if let imProperties = contextPool.widget.getAgoraWidgetProperties(type: .im),
-           let hxProperties = imProperties["huanxin"] as? [String: Any],
-           let privateChatRoom = hxProperties["privateChatRoom"] as? [String:Any] {
             properties["privateChatRoom"] = privateChatRoom
+            properties["chatRoomId"] = chatRoomId
         }
         
         info.properties = properties
@@ -352,7 +348,7 @@ extension AgoraUIManager: AgoraEduRoomHandler {
 
         let isPad: Bool = UIDevice.current.model == "iPad"
         chat.containerView.agora_safe_bottom = 15
-        chat.containerView.agora_width = isPad ? 300:200
+        chat.containerView.agora_width = isPad ? 340:200
         chat.containerView.agora_right = isPad ? 60:50
         chat.containerView.agora_height = isPad ? 400:268
         self.hxChat = chat

@@ -207,6 +207,7 @@
 {
     if(!_currentQAView) {
         _currentQAView = [[TeacherQAView alloc] init];
+        _currentQAView.delegate = self;
     }
     return _currentQAView;
 }
@@ -259,6 +260,7 @@
     if(self.showRedNoticeUsers.count <= 0)
     {
         // 问答不显示红点
+        [self showRedNotice:NO];
     }
     cell.showRedNotice = NO;
 }
@@ -268,5 +270,6 @@
 {
     self.qaUserListView.hidden = NO;
     self.showQAView = NO;
+    self.currentQAView = nil;
 }
 @end

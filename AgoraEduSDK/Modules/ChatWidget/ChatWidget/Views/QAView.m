@@ -102,8 +102,8 @@
             make.bottom.equalTo(self).offset(-CHATBAR_HEIGHT);
     }];
     [self.chatBar mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.bottom.right.equalTo(self).offset(-5);
-        make.left.equalTo(self).offset(5);
+        make.bottom.right.equalTo(self).offset(-10);
+        make.left.equalTo(self).offset(10);
         make.height.equalTo(@CHATBAR_HEIGHT);
     }];
     [self.nilQAMsgView mas_makeConstraints:^(MASConstraintMaker *make) {

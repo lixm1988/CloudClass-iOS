@@ -20,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readonly) EMMessageBubbleView *bubbleView;
 
+@property (nonatomic, strong) UIImageView *avatarView;
+
 @property (nonatomic) EMMessageDirection direction;
 
 @property (nonatomic, strong) EMMessageModel *model;

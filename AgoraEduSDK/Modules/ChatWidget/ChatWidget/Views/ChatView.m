@@ -15,6 +15,7 @@
 #import "ChatWidget+Localizable.h"
 #import "ChatWidgetDefine.h"
 #import <SDWebImage/UIImageView+WebCache.h>
+#import "CustomPopOverView.h"
 
 #define CHATBAR_HEIGHT 30
 
@@ -106,7 +107,7 @@
 
 @end
 
-@interface ChatView ()<UITableViewDelegate, UITableViewDataSource, ChatBarDelegate,EMMessageCellDelegate,EMMessageStringCellDelegate>
+@interface ChatView ()<UITableViewDelegate, UITableViewDataSource, ChatBarDelegate,EMMessageCellDelegate,EMMessageStringCellDelegate,CustomPopOverViewDelegate>
 @property (nonatomic,strong) NilMessageView* nilMessageView;
 @property (strong, nonatomic) UITableView *tableView;
 @property (nonatomic,strong) ShowAnnouncementView* showAnnouncementView;
@@ -116,16 +117,14 @@
 @property (nonatomic) NSTimeInterval msgTimelTag;
 //长按操作栏
 @property (strong, nonatomic) NSIndexPath *menuIndexPath;
-@property (nonatomic, strong) UIMenuController *menuController;
-@property (nonatomic, strong) UIMenuItem *recallMenuItem;
-@property (nonatomic, strong) UIMenuItem *deleteMenuItem;
-@property (nonatomic, strong) UIMenuItem *muteMenuItem;
 // 删除的消息
 @property (nonatomic, strong) NSMutableArray<NSString*>* msgsToDel;
 // 全员禁言按钮
 @property (nonatomic,strong) UIButton* muteAllButton;
 // 图片放大
 @property (nonatomic,strong) UIImageView* fullImageView;
+// 菜单style
+@property (nonatomic,strong) CPShowStyle *menuStyle;
 @end
 
 @implementation ChatView
@@ -247,15 +246,6 @@
     return _dataArray;
 }
 
-- (UIMenuController *)menuController
-{
-    if (_menuController == nil) {
-        _menuController = [UIMenuController sharedMenuController];
-    }
-    
-    return _menuController;
-}
-
 - (UIButton*)muteAllButton
 {
     if(!_muteAllButton) {
@@ -283,33 +273,6 @@
 - (BOOL)canBecomeFirstResponder
 {
     return YES;
-}
-
-- (UIMenuItem *)recallMenuItem
-{
-    if (_recallMenuItem == nil) {
-        _recallMenuItem = [[UIMenuItem alloc] initWithTitle:[ChatWidget LocalizedString:@"ChatRecall"] action:@selector(deleteMenuItemAction:)];
-    }
-    
-    return _recallMenuItem;
-}
-
-- (UIMenuItem *)deleteMenuItem
-{
-    if (_deleteMenuItem == nil) {
-        _deleteMenuItem = [[UIMenuItem alloc] initWithTitle:[ChatWidget LocalizedString:@"Delete"] action:@selector(deleteMenuItemAction:)];
-    }
-    
-    return _deleteMenuItem;
-}
-
-- (UIMenuItem *)muteMenuItem
-{
-    if (_muteMenuItem == nil) {
-        _muteMenuItem = [[UIMenuItem alloc] initWithTitle:[ChatWidget LocalizedString:@"ChatMute"] action:@selector(muteMenuItemAction:)];
-    }
-    
-    return _muteMenuItem;
 }
 
 - (NSMutableArray<NSString*>*)msgsToDel
@@ -591,102 +554,26 @@
     }
 }
 
-
-- (void)recallMenuItemAction:(UIMenuController *)aItem
-{
-    if (self.menuIndexPath == nil) {
-        return;
-    }
-    
-    NSIndexPath *indexPath = self.menuIndexPath;
-    __weak typeof(self) weakself = self;
-    EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
-    
-    [[EMClient sharedClient].chatManager recallMessageWithMessageId:model.emModel.messageId completion:^(EMError *aError) {
-        if (!aError) {
-            EMTextMessageBody *body = [[EMTextMessageBody alloc] initWithText:[ChatWidget LocalizedString:@"ChatRecallAMessage"]];
-            NSString *from = [[EMClient sharedClient] currentUsername];
-            NSString *to = self.chatManager.chatRoomId;
-            EMMessage *message = [[EMMessage alloc] initWithConversationID:to from:from to:to body:body ext:@{MSG_EXT_RECALL:@(YES)}];
-            message.chatType = EMChatTypeChatRoom;
-            message.isRead = YES;
-            message.timestamp = model.emModel.timestamp;
-            message.localTime = model.emModel.localTime;
-            EMConversation* roomConvesation = [[[EMClient sharedClient] chatManager] getConversationWithConvId:self.chatManager.chatRoomId];
-            [roomConvesation insertMessage:message error:nil];
-            
-            EMMessageModel *model = [[EMMessageModel alloc] initWithEMMessage:message];
-            [weakself.dataArray replaceObjectAtIndex:indexPath.row withObject:model];
-            [weakself.tableView reloadData];
-        }
-    }];
-    
-    self.menuIndexPath = nil;
-}
-
-- (void)deleteMenuItemAction:(UIMenuController *)aItem
-{
-    if (self.menuIndexPath == nil) {
-        return;
-    }
-    NSIndexPath *indexPath = self.menuIndexPath;
-    __weak typeof(self) weakself = self;
-    EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
-    [self.chatManager deleteMessage:model.emModel.messageId];
-    self.menuIndexPath = nil;
-}
-
-- (void)muteMenuItemAction:(UIMenuController *)aItem
-{
-    if (self.menuIndexPath == nil) {
-        return;
-    }
-    NSIndexPath *indexPath = self.menuIndexPath;
-    __weak typeof(self) weakself = self;
-    EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
-    if([self.muteMenuItem.title isEqualToString:[ChatWidget LocalizedString:@"ChatMute"]]) {
-        [self.chatManager muteMember:model.emModel.from mute:YES];
-    }else{
-        [self.chatManager muteMember:model.emModel.from mute:NO];
-    }
-    
-    self.menuIndexPath = nil;
-    
-}
-
-- (void)_showMenuViewController:(EMMessageCell *)aCell
-                          model:(EMMessageModel *)aModel isAvatar:(BOOL)isAvatar
-{
-    [self becomeFirstResponder];
-    
-    NSMutableArray *items = [[NSMutableArray alloc] init];
-    if(isAvatar) {
-        [items addObject:self.muteMenuItem];
-        if([self.chatManager.muteMembers containsObject: aModel.emModel.from]) {
-            self.muteMenuItem.title = [ChatWidget LocalizedString:@"ChatUnmute"];
-        }else{
-            self.muteMenuItem.title = [ChatWidget LocalizedString:@"ChatMute"];
-        }
-    }else{
-        if (aModel.emModel.direction == EMMessageDirectionSend) {
-            [items addObject:self.recallMenuItem];
-        }else{
-            if(ROLE_IS_TEACHER(self.chatManager.user.role)){
-                [items addObject:self.deleteMenuItem];
-            }
-        }
-    }
-    
-    
-    [self.menuController setMenuItems:items];
-    [self.menuController setTargetRect:aCell.bubbleView.frame inView:aCell];
-    [self.menuController setMenuVisible:YES animated:NO];
-}
-
 - (void)messageCellDidLongPress:(EMMessageCell *)aCell
 {
+    NSString* title = nil;
+    if (aCell.model.emModel.direction == EMMessageDirectionSend) {
+        title = [ChatWidget LocalizedString:@"ChatRecall"];
+    }else{
+        if(ROLE_IS_TEACHER(self.chatManager.user.role)){
+            title = [ChatWidget LocalizedString:@"ChatRemove"];
+        }else
+            return;
+    }
+    NSArray *arr = @[
+                     @{@"name": title, @"icon": @"icon_recall"}
+                     ];
+    
+    CustomPopOverView *view = [[CustomPopOverView alloc]initWithBounds:CGRectMake(0, 0, 60, 30) titleInfo:arr style:self.menuStyle];
+    view.delegate = self;
+    [view showFrom:aCell.bubbleView alignStyle:CPAlignStyleCenter relativePosition:CPContentPositionAlwaysUp];
     self.menuIndexPath = [self.tableView indexPathForCell:aCell];
-    [self _showMenuViewController:aCell model:aCell.model isAvatar:NO];
+    //[self _showMenuViewController:aCell model:aCell.model isAvatar:NO];
 }
 
 - (void)messageCellDidResend:(EMMessageModel *)aModel
@@ -703,9 +590,45 @@
 {
     if([self.chatManager.admins containsObject:aCell.model.emModel.from])
         return;
-    CGPoint pt = [gestureRecognizer locationInView:self];
     self.menuIndexPath = [self.tableView indexPathForCell:aCell];
-    [self _showMenuViewController:aCell model:aCell.model isAvatar:YES];
+    
+    NSString* title = nil;
+    NSInteger width = 60;
+    if([self.chatManager.muteMembers containsObject: aCell.model.emModel.from]) {
+        title = [ChatWidget LocalizedString:@"ChatUnmute"];
+        width = 90;
+    }else{
+        title = [ChatWidget LocalizedString:@"ChatMute"];
+    }
+    NSArray *arr = @[
+                     @{@"name": title, @"icon": @"icon_mute"}
+                     ];
+    
+    CustomPopOverView *view = [[CustomPopOverView alloc]initWithBounds:CGRectMake(0, 0, width, 30) titleInfo:arr style:self.menuStyle];
+    view.delegate = self;
+    [view showFrom:aCell.avatarView alignStyle:CPAlignStyleCenter relativePosition:CPContentPositionAlwaysUp];
+    self.menuIndexPath = [self.tableView indexPathForCell:aCell];
+}
+
+- (CPShowStyle*)menuStyle
+{
+    if(!_menuStyle) {
+        _menuStyle = [CPShowStyle new];
+        _menuStyle.triAngelHeight = 6.0;
+        _menuStyle.triAngelWidth = 10.0;
+        _menuStyle.containerCornerRadius = 1.0;
+        _menuStyle.containerBorderWidth = 0.0;
+        _menuStyle.shadowColor = [UIColor grayColor];
+        _menuStyle.roundMargin = 0.0;
+        _menuStyle.defaultRowHeight = 30;
+        _menuStyle.showSpace = 0;
+        _menuStyle.tableBackgroundColor = [UIColor whiteColor];
+        _menuStyle.containerBackgroudColor = [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0];
+        _menuStyle.textColor = [UIColor colorWithRed:125/255.0 green:135/255.0 blue:152/255.0 alpha:1.0];
+        _menuStyle.textAlignment = NSTextAlignmentLeft;
+        _menuStyle.separatorStyle = UITableViewCellSeparatorStyleNone;
+    }
+    return _menuStyle;
 }
 
 - (void)imageDataWillSend:(NSData*)aImageData
@@ -729,6 +652,35 @@
         if([self.chatBar respondsToSelector:@selector(InputAction)])
             [self.chatBar performSelector:@selector(InputAction)];
     }
+}
+
+#pragma mark - CustomPopOverViewDelegate
+- (void)popOverView:(CustomPopOverView *)pView didClickMenuTitle:(NSString*)title
+{
+    if([title isEqualToString:[ChatWidget LocalizedString:@"ChatMute"]]) {
+        NSIndexPath *indexPath = self.menuIndexPath;
+        EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
+        [self.chatManager muteMember:model.emModel.from mute:YES];
+        self.menuIndexPath = nil;
+    }
+    if([title isEqualToString:[ChatWidget LocalizedString:@"ChatUnmute"]]) {
+        NSIndexPath *indexPath = self.menuIndexPath;
+        EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
+        [self.chatManager muteMember:model.emModel.from mute:NO];
+        self.menuIndexPath = nil;
+    }
+    if([title isEqualToString:[ChatWidget LocalizedString:@"ChatRecall"]]) {
+        EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
+        [self.chatManager deleteMessage:model.emModel.messageId];
+        self.menuIndexPath = nil;
+    }
+    if([title isEqualToString:[ChatWidget LocalizedString:@"ChatRemove"]]) {
+        EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
+        [self.chatManager deleteMessage:model.emModel.messageId];
+        self.menuIndexPath = nil;
+    }
+    [pView removeFromSuperview];
+    pView = nil;
 }
 
 @end

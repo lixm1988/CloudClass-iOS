@@ -38,6 +38,6 @@ ChatRemove = "删除";
 ChatSave = "发布";
 ChatCancel = "取消";
 ChatEmptyQA = "还没有提问";
-ChatUserRecallMsg = "撤回一条消息";
+ChatUserRecallMsg = "撤回了一条消息";
 ChatMute = "禁言";
 ChatUnmute = "解除禁言";

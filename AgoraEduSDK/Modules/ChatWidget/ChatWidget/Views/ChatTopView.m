@@ -225,7 +225,6 @@ const static NSInteger TAG_BASE = 1000;
                 break;
             case 1:
                 [self setSelectButton:self.qaButton];
-                self.isShowQARedNotice = NO;
                 break;
             case 2:
                 [self setSelectButton:self.membersButton];
