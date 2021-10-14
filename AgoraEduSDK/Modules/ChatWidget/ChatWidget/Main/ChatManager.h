@@ -83,6 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) NSMutableArray* admins;
 @property (nonatomic,strong) NSMutableArray* members;
 @property (nonatomic,strong) NSMutableArray* muteMembers;
+@property (nonatomic) BOOL hasNewMsgs;
 @end
 
 NS_ASSUME_NONNULL_END

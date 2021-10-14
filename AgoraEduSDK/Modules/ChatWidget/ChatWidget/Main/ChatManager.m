@@ -45,6 +45,7 @@ static BOOL isSDKInited = NO;
         self.user = aUserConfig;
         self.chatRoomId = aChatRoomId;
         self.isLogin = NO;
+        self.hasNewMsgs = NO;
         [self initHyphenateSDK];
     }
     return self;
@@ -670,6 +671,7 @@ static BOOL isSDKInited = NO;
     if(lastMsg)
         self.latestMsgId = lastMsg.messageId;
     [self.dataLock unlock];
+    self.hasNewMsgs = YES;
     if([self.delegate respondsToSelector:@selector(chatMessageDidReceive)]) {
         [self.delegate chatMessageDidReceive];
     }

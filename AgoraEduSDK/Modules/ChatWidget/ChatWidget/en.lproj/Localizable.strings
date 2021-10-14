@@ -41,3 +41,4 @@ ChatEmptyQA = "NO Q&A messages";
 ChatUserRecallMsg = "recall a message";
 ChatMute = "mute";
 ChatUnmute = "unmute";
+ChatNewMsgs = "New messages";

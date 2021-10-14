@@ -41,3 +41,4 @@ ChatEmptyQA = "还没有提问";
 ChatUserRecallMsg = "撤回了一条消息";
 ChatMute = "禁言";
 ChatUnmute = "解除禁言";
+ChatNewMsgs = "条新消息";
