@@ -356,8 +356,7 @@ static BOOL isSDKInited = NO;
         if(self.user.avatarurl.length <= 0) {
             self.user.avatarurl = @"https://download-sdk.oss-cn-beijing.aliyuncs.com/downloads/IMDemo/avatar/Image1.png";
         }
-        NSString* retStr = [EMEmojiHelper convertEmojiToKeys:aText];
-        EMTextMessageBody* textBody = [[EMTextMessageBody alloc] initWithText:retStr];
+        EMTextMessageBody* textBody = [[EMTextMessageBody alloc] initWithText:aText];
         NSMutableDictionary* ext = [@{kMsgType:[NSNumber numberWithInteger: aType],
                                       @"role": [NSNumber numberWithInteger:self.user.role]} mutableCopy];
         if(self.user.nickname.length > 0 ){
