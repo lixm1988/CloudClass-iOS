@@ -11,6 +11,7 @@
 #import "ChatWidget+Localizable.h"
 #import "EMEmojiHelper.h"
 #import "EmojiTextAttachment.h"
+#import "UITextView+Placeholder.h"
 
 #define CONTAINVIEW_HEIGHT 40
 #define SENDBUTTON_HEIGHT 30
@@ -19,7 +20,7 @@
 #define EMOJIBUTTON_WIDTH 30
 #define GAP 60
 
-@interface InputingView ()<UITextFieldDelegate,EmojiKeyboardDelegate>
+@interface InputingView ()<UITextViewDelegate,EmojiKeyboardDelegate>
 @property (nonatomic,strong) EmojiKeyboardView *emojiKeyBoardView;
 @property (nonatomic,strong) UIButton* imageButton;
 @end
@@ -58,21 +59,21 @@
               forControlEvents:UIControlEventTouchUpInside];
     
     self.backgroundColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0];
-    self.inputField = [[UITextView alloc] initWithFrame:CGRectMake(GAP,5,self.bounds.size.width - EMOJIBUTTON_WIDTH*2 - SENDBUTTON_WIDTH - GAP*2-20,
+    self.inputTextView = [[UITextView alloc] initWithFrame:CGRectMake(GAP,5,self.bounds.size.width - EMOJIBUTTON_WIDTH*2 - SENDBUTTON_WIDTH - GAP*2-20,
                                                                     CONTAINVIEW_HEIGHT-10)];
-    self.inputField.layer.backgroundColor = [UIColor whiteColor].CGColor;
-    self.inputField.layer.cornerRadius = 16;
+    self.inputTextView.layer.backgroundColor = [UIColor whiteColor].CGColor;
+    self.inputTextView.textContainerInset = UIEdgeInsetsMake(5, 15, 5, 10);
     //self.inputField.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 16, 0)];
     //self.inputField.leftView.userInteractionEnabled = NO;
     //self.inputField.leftViewMode = UITextFieldViewModeAlways;
-    self.inputField.backgroundColor = [UIColor whiteColor];
-    //self.inputField.placeholder = [ChatWidget LocalizedString:@"ChatPlaceholderText"];
-    //self.inputField.layer.cornerRadius = 15;
-    self.inputField.returnKeyType = UIReturnKeySend;
-    self.inputField.delegate = self;
-    self.inputField.inputAssistantItem.leadingBarButtonGroups = [NSArray array];
-    self.inputField.inputAssistantItem.trailingBarButtonGroups = [NSArray array];
-    [self addSubview:self.inputField];
+    self.inputTextView.backgroundColor = [UIColor whiteColor];
+    self.inputTextView.placeholder = [ChatWidget LocalizedString:@"ChatPlaceholderText"];
+    self.inputTextView.layer.cornerRadius = 15;
+    self.inputTextView.returnKeyType = UIReturnKeySend;
+    self.inputTextView.delegate = self;
+    self.inputTextView.inputAssistantItem.leadingBarButtonGroups = [NSArray array];
+    self.inputTextView.inputAssistantItem.trailingBarButtonGroups = [NSArray array];
+    [self addSubview:self.inputTextView];
     
     self.emojiButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.emojiButton setImage:[UIImage imageNamedFromBundle:@"icon_emoji"]
@@ -116,14 +117,14 @@
 - (void)changeKeyBoardType
 {
     if(self.emojiButton.isSelected) {
-            self.inputField.inputView = self.emojiKeyBoardView;
+            self.inputTextView.inputView = self.emojiKeyBoardView;
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self.inputField reloadInputViews];
+                [self.inputTextView reloadInputViews];
             });
         }else{
-            self.inputField.inputView = nil;
+            self.inputTextView.inputView = nil;
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self.inputField reloadInputViews];
+                [self.inputTextView reloadInputViews];
             });
         }
 }
@@ -132,13 +133,13 @@
 {
     self.hidden = YES;
     self.exitInputButton.hidden = YES;
-    self.inputField.text = @"";
-    [self.inputField resignFirstResponder];
+    self.inputTextView.text = @"";
+    [self.inputTextView resignFirstResponder];
 }
 
 - (void)sendMsg
 {
-    NSAttributedString*attr = self.inputField.attributedText;
+    NSAttributedString*attr = self.inputTextView.attributedText;
     __block NSString* str = @"";
     [attr enumerateAttributesInRange:NSMakeRange(0, attr.length) options:0 usingBlock:^(NSDictionary<NSAttributedStringKey,id> * _Nonnull attrs, NSRange range, BOOL * _Nonnull stop) {
         EmojiTextAttachment* attachment = [attrs objectForKey:NSAttachmentAttributeName];
@@ -149,17 +150,10 @@
             NSAttributedString* tmp = [attr attributedSubstringFromRange:range];
             str = [str stringByAppendingString:tmp.string];
         }
-        if(!*stop) {
-            if(str.length > 0) {
-                [self.delegate msgWillSend:str];
-            }
-        [self exit];
-        }
     }];
-    NSString* sendText = self.inputField.text;
-        if(sendText.length > 0) {
-            [self.delegate msgWillSend:sendText];
-        }
+    if(str.length > 0) {
+        [self.delegate msgWillSend:str];
+    }
     [self exit];
 }
 
@@ -184,26 +178,34 @@
     return YES;
     
 }
+- (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text
+{
+    if([text isEqualToString:@"\n"]) {
+        [self sendButtonAction];
+        return NO;
+    }
+    return YES;
+}
 #pragma mark - CustomKeyBoardDelegate
 - (void)emojiItemDidClicked:(NSString *)item{
-    NSRange selectedRange = [self selectedRange:self.inputField];
-    NSMutableAttributedString* attrString = [self.inputField.attributedText mutableCopy];
+    NSRange selectedRange = [self selectedRange:self.inputTextView];
+    NSMutableAttributedString* attrString = [self.inputTextView.attributedText mutableCopy];
     EmojiTextAttachment* attachMent = [[EmojiTextAttachment alloc] init];
     NSString* imageFileName = [[EMEmojiHelper sharedHelper].emojiFilesDic objectForKey:item];
     if(imageFileName.length == 0) return;
     attachMent.emojiStr = item;
-    attachMent.bounds = CGRectMake(0, 0, 16, 16);
+    attachMent.bounds = CGRectMake(0, 0, 12, 12);
     attachMent.image = [UIImage imageNamedFromBundle:imageFileName];
     NSAttributedString *imageStr = [NSAttributedString attributedStringWithAttachment:attachMent];
     [attrString appendAttributedString:imageStr];
-    self.inputField.attributedText = attrString;
+    self.inputTextView.attributedText = attrString;
  }
 
  - (void)emojiDidDelete
  {
-     if ([self.inputField.attributedText length] > 0) {
-         NSRange selectedRange = [self selectedRange:self.inputField];
-         NSMutableAttributedString* attrString = [self.inputField.attributedText mutableCopy];
+     if ([self.inputTextView.attributedText length] > 0) {
+         NSRange selectedRange = [self selectedRange:self.inputTextView];
+         NSMutableAttributedString* attrString = [self.inputTextView.attributedText mutableCopy];
          if(selectedRange.length > 0)
          {
              [attrString deleteCharactersInRange:selectedRange];
@@ -212,7 +214,7 @@
                  [attrString deleteCharactersInRange:NSMakeRange(selectedRange.location-1, 1)];
          }
 
-         self.inputField.attributedText = attrString;
+         self.inputTextView.attributedText = attrString;
      }
  }
 
@@ -258,13 +260,13 @@
             self.hidden = YES;
             self.exitInputButton.hidden = YES;
         }
-        [self.delegate keyBoardDidHide:self.inputField.text];
+        [self.delegate keyBoardDidHide:self.inputTextView.text];
     }];
 }
 
 - (void)emojiButtonAction
 {
-    [self.inputField becomeFirstResponder];
+    [self.inputTextView becomeFirstResponder];
     [self.emojiButton setSelected:!self.emojiButton.isSelected];
     [self changeKeyBoardType];
 }

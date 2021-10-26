@@ -11,7 +11,7 @@
 #import "UIImage+ChatExt.h"
 #import "ChatWidget+Localizable.h"
 #import "ChatWidgetDefine.h"
-#import <HyphenateChat/HyphenateChat.h>
+#import <AgoraChat/AgoraChat.h>
 
 @interface EMMemberCell ()
 @property (strong,nonatomic) UIImageView* avatarView;

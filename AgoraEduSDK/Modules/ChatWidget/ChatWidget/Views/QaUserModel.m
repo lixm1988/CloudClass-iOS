@@ -16,12 +16,12 @@
     return _msgArray;
 }
 
-- (void)pushMsg:(EMMessage*)msg
+- (void)pushMsg:(AgoraChatMessage*)msg
 {
     if(self.msgArray.count == 0)
         [self.msgArray addObject:msg];
     else{
-        EMMessage* lastMsg = [self.msgArray lastObject];
+        AgoraChatMessage* lastMsg = [self.msgArray lastObject];
         if(msg.timestamp >= lastMsg.timestamp)
             [self.msgArray addObject:msg];
         else

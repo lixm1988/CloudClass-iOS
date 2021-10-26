@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "ChatUserConfig.h"
 #import "ChatWidgetDefine.h"
-#import <HyphenateChat/HyphenateChat.h>
+#import <AgoraChat/AgoraChat.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -20,9 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 // 需要展示提问消息
 - (void)qaMessageDidReceive;
 // 需要展示发送消息
-- (void)chatMessageDidSend:(EMMessage*)aMessage;
+- (void)chatMessageDidSend:(AgoraChatMessage*)aMessage;
 // 需要展示发送的提问消息
-- (void)qaMessageDidSend:(EMMessage*)aMessage;
+- (void)qaMessageDidSend:(AgoraChatMessage*)aMessage;
 // 发生异常
 - (void)exceptionDidOccur:(NSString*)aErrorDescription;
 // 需要撤回消息
@@ -58,9 +58,9 @@ NS_ASSUME_NONNULL_BEGIN
 // 获取用户配置
 - (ChatUserConfig*)userConfig;
 // 接收的消息
-- (NSArray<EMMessage*> *)msgArray;
+- (NSArray<AgoraChatMessage*> *)msgArray;
 // 接收的消息
-- (NSArray<EMMessage*> *)qaArray;
+- (NSArray<AgoraChatMessage*> *)qaArray;
 // 更新头像
 - (void)updateAvatar:(NSString*)avatarUrl;
 // 更新昵称

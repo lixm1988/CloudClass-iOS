@@ -218,7 +218,7 @@ static const NSString* kIsShowBadge = @"isShowBadge";
 {
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSArray<EMMessage*>* array = [weakself.chatManager msgArray];
+        NSArray<AgoraChatMessage*>* array = [weakself.chatManager msgArray];
         [self.chatView updateMsgs:array];
         if(array.count > 0) {
             if([self.containerView isHidden]) {
@@ -238,7 +238,7 @@ static const NSString* kIsShowBadge = @"isShowBadge";
 {
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSArray<EMMessage*>* array = [weakself.chatManager qaArray];
+        NSArray<AgoraChatMessage*>* array = [weakself.chatManager qaArray];
         [self.qaView updateMsgs:array];
         if(array.count > 0) {
             if([self.containView isHidden]) {
@@ -254,12 +254,12 @@ static const NSString* kIsShowBadge = @"isShowBadge";
     self.chatTopView.isShowQARedNotice = showQARedNotice;
 }
 
-- (void)chatMessageDidSend:(EMMessage*)aInfo
+- (void)chatMessageDidSend:(AgoraChatMessage*)aInfo
 {
     [self.chatView updateMsgs:@[aInfo]];
 }
 
-- (void)qaMessageDidSend:(EMMessage *)aMessage
+- (void)qaMessageDidSend:(AgoraChatMessage *)aMessage
 {
     [self.qaView updateMsgs:@[aMessage]];
 }

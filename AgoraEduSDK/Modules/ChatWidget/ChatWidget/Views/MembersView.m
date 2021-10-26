@@ -10,7 +10,7 @@
 #import <Masonry/Masonry.h>
 #import "UIImage+ChatExt.h"
 #import "EMMemberCell.h"
-#import <HyphenateChat/HyphenateChat.h>
+#import <AgoraChat/AgoraChat.h>
 #import "ChatWidgetDefine.h"
 
 @interface MembersView ()<UITableViewDelegate,UITableViewDataSource,UITextFieldDelegate>
@@ -96,7 +96,7 @@
     NSMutableArray* arr = [NSMutableArray array];
     if(self.searchText.length > 0) {
         for(NSString* str in self.admins) {
-            EMUserInfo* userInfo = [self.userInfoDic objectForKey:str];
+            AgoraChatUserInfo* userInfo = [self.userInfoDic objectForKey:str];
             if(userInfo) {
                 NSRange range = [userInfo.nickName rangeOfString:self.searchText options:NSCaseInsensitiveSearch];
                 if(range.length > 0) {
@@ -105,7 +105,7 @@
             }
         }
         for(NSString* str in self.members) {
-            EMUserInfo* userInfo = [self.userInfoDic objectForKey:str];
+            AgoraChatUserInfo* userInfo = [self.userInfoDic objectForKey:str];
             if(userInfo) {
                 NSRange range = [userInfo.nickName rangeOfString:self.searchText options:NSCaseInsensitiveSearch];
                 if(range.length > 0) {
@@ -218,7 +218,7 @@
     }
     if(uid.length > 0) {
         cell.userId = uid;
-        EMUserInfo* userInfo = [self.userInfoDic objectForKey:uid];
+        AgoraChatUserInfo* userInfo = [self.userInfoDic objectForKey:uid];
         if(userInfo) {
             NSUInteger role = [self _getRoleFromExt:userInfo.ext];
             [cell setAvartarUrl:userInfo.avatarUrl nickName:userInfo.nickName role:role];
@@ -294,11 +294,11 @@
         NSArray* arr = [array subarrayWithRange:range];
         if(arr.count <= 0)
             return;
-        [[[EMClient sharedClient] userInfoManager] fetchUserInfoById:arr completion:^(NSDictionary *aUserDatas, EMError *aError) {
+        [[[AgoraChatClient sharedClient] userInfoManager] fetchUserInfoById:arr completion:^(NSDictionary *aUserDatas, AgoraChatError *aError) {
             if(!aError) {
                 if(aUserDatas.count > 0) {
                     for (NSString* uid in aUserDatas) {
-                        EMUserInfo* userInfo = [aUserDatas objectForKey:uid];
+                        AgoraChatUserInfo* userInfo = [aUserDatas objectForKey:uid];
                         if(uid.length > 0 && userInfo)
                         {
                             [weakself.userInfoDic setObject:userInfo forKey:uid];

@@ -6,7 +6,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <HyphenateChat/HyphenateChat.h>
+#import <AgoraChat/AgoraChat.h>
 #import "ChatWidgetDefine.h"
 #import "ChatBar.h"
 
@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,weak) id<QAViewDelegate> delegate;
 @property (nonatomic,strong) ChatBar* chatBar;
 @property (nonatomic,strong) NSString* asker;
-- (void)updateMsgs:(NSMutableArray<EMMessage*>*)msgArray;
+- (void)updateMsgs:(NSMutableArray<AgoraChatMessage*>*)msgArray;
 - (void)resetMsgs;
 @end
 

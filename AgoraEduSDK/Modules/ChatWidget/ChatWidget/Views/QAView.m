@@ -226,7 +226,7 @@
     }
 }
 
-- (void)updateMsgs:(NSMutableArray<EMMessage*>*)msgArray
+- (void)updateMsgs:(NSMutableArray<AgoraChatMessage*>*)msgArray
 {
     NSArray *formated = [self _formatMessages:msgArray];
     [self.dataArray addObjectsFromArray:formated];
@@ -244,29 +244,29 @@
     [self.msgsToDel removeAllObjects];
 }
 
-- (NSArray *)_formatMessages:(NSArray<EMMessage *> *)aMessages
+- (NSArray *)_formatMessages:(NSArray<AgoraChatMessage *> *)aMessages
 {
     NSMutableArray *formated = [[NSMutableArray alloc] init];
 
     for (int i = 0; i < [aMessages count]; i++) {
-        EMMessage *msg = aMessages[i];
+        AgoraChatMessage *msg = aMessages[i];
         if([self.msgIdArray containsObject:msg.messageId]) {
             continue;
         }else{
             [self.msgIdArray addObject:msg.messageId];
         }
         // cmd消息不展示
-        if(msg.body.type == EMMessageBodyTypeCmd) {
+        if(msg.body.type == AgoraChatMessageBodyTypeCmd) {
             continue;
         }
-        if(msg.body.type == EMMessageBodyTypeCustom) {
+        if(msg.body.type == AgoraChatMessageBodyTypeCustom) {
             continue;
         }
-        if (msg.chatType == EMChatTypeChat && !msg.isReadAcked && (msg.body.type == EMMessageBodyTypeText || msg.body.type == EMMessageBodyTypeLocation)) {
+        if (msg.chatType == AgoraChatTypeChat && !msg.isReadAcked && (msg.body.type == AgoraChatMessageBodyTypeText || msg.body.type == AgoraChatMessageBodyTypeLocation)) {
             if([self.msgsToDel containsObject:msg.messageId])
                 continue;
-            [[EMClient sharedClient].chatManager sendMessageReadAck:msg.messageId toUser:msg.conversationId completion:nil];
-        } else if (msg.chatType == EMChatTypeGroupChat && !msg.isReadAcked && (msg.body.type == EMMessageBodyTypeText || msg.body.type == EMMessageBodyTypeLocation)) {
+            [[AgoraChatClient sharedClient].chatManager sendMessageReadAck:msg.messageId toUser:msg.conversationId completion:nil];
+        } else if (msg.chatType == AgoraChatTypeGroupChat && !msg.isReadAcked && (msg.body.type == AgoraChatMessageBodyTypeText || msg.body.type == AgoraChatMessageBodyTypeLocation)) {
         }
         
         EMMessageModel *model = [[EMMessageModel alloc] initWithEMMessage:msg];

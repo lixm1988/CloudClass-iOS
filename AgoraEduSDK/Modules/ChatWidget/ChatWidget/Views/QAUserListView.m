@@ -71,10 +71,10 @@
     return _qaUserListView;
 }
 
-- (void)updateMsgs:(NSMutableArray<EMMessage*>*)msgArray
+- (void)updateMsgs:(NSMutableArray<AgoraChatMessage*>*)msgArray
 {
     [self.dataLock lock];
-    for (EMMessage*msg in msgArray) {
+    for (AgoraChatMessage*msg in msgArray) {
         NSString* asker = [msg.ext objectForKey:@"asker"];
         if(asker.length > 0) {
             NSInteger index = [self getUserModelIndexByUid:asker];
@@ -154,7 +154,7 @@
         [self.latestMsgs setObject:msgId forKey:asker];
     }
     NSUserDefaults* userDefault = [NSUserDefaults standardUserDefaults];
-    NSString* userName = [EMClient sharedClient].currentUsername;
+    NSString* userName = [AgoraChatClient sharedClient].currentUsername;
     if(userName.length > 0 && self.latestMsgs.count > 0)
         [userDefault setObject:self.latestMsgs forKey:userName];
 }
@@ -254,7 +254,7 @@
             self.currentQAView.qaView.delegate = self.parantView;
     }
     [self.currentQAView resetMsgs:cell.model.msgArray];
-    EMMessage* msg = cell.model.msgArray.lastObject;
+    AgoraChatMessage* msg = cell.model.msgArray.lastObject;
     [self saveReadMsg:msg.messageId  asker:cell.model.userId];
     [self.showRedNoticeUsers removeObject:cell.model.userId];
     if(self.showRedNoticeUsers.count <= 0)

@@ -10,7 +10,7 @@
 #import "ChatWidget+Localizable.h"
 #import <Photos/Photos.h>
 #import <MobileCoreServices/MobileCoreServices.h>
-#import <HyphenateChat/HyphenateChat.h>
+#import <AgoraChat/AgoraChat.h>
 #import "EmojiKeyboardView.h"
 
 
@@ -20,7 +20,7 @@
 #define INPUT_WIDTH 120
 #define EMOJIBUTTON_WIDTH 24
 
-@interface ChatBar ()<InputingViewDelegate,UIImagePickerControllerDelegate,UITextFieldDelegate>
+@interface ChatBar ()<InputingViewDelegate,UIImagePickerControllerDelegate>
 @property (nonatomic,strong) UIButton* emojiButton;
 @property (nonatomic,strong) UIButton* imageButton;
 @property (nonatomic,strong) UIButton* exitInputButton;
@@ -110,7 +110,7 @@
 
 - (void)ExitInputAction
 {
-    [self.inputingView.inputField resignFirstResponder];
+    [self.inputingView.inputTextView resignFirstResponder];
     self.inputingView.hidden = YES;
     self.exitInputButton.hidden = YES;
 }
@@ -119,9 +119,9 @@
 {
     self.inputingView.hidden = NO;
     self.exitInputButton.hidden = NO;
-    if([self.inputingView.inputField isFirstResponder])
-        [self.inputingView.inputField resignFirstResponder];
-    [self.inputingView.inputField becomeFirstResponder];
+    if([self.inputingView.inputTextView isFirstResponder])
+        [self.inputingView.inputTextView resignFirstResponder];
+    [self.inputingView.inputTextView becomeFirstResponder];
 }
 - (void)emojiButtonAction
 {
@@ -155,7 +155,7 @@
                 {
                     self.imagePicker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
                     self.imagePicker.mediaTypes = @[(NSString *)kUTTypeImage];
-                    UIViewController *viewController = [[self class] dc_findCurrentShowingViewController];
+                    UIViewController *viewController = [[self class] findCurrentShowingViewController];
                     [viewController presentViewController:self.imagePicker animated:YES completion:nil];
                 }
                     break;
@@ -213,7 +213,7 @@
 }
 
 // 获取当前显示的 UIViewController
-+ (UIViewController *)dc_findCurrentShowingViewController {
++ (UIViewController *)findCurrentShowingViewController {
     //获得当前活动窗口的根视图
     UIViewController *vc = [UIApplication sharedApplication].keyWindow.rootViewController;
     UIViewController *currentShowingVC = [self findCurrentShowingViewControllerFrom:vc];

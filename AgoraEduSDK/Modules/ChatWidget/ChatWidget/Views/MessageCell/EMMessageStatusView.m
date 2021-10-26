@@ -66,10 +66,10 @@
 
 #pragma mark - Public
 
-- (void)setSenderStatus:(EMMessageStatus)aStatus
+- (void)setSenderStatus:(AgoraChatMessageStatus)aStatus
             isReadAcked:(BOOL)aIsReadAcked
 {
-    if (aStatus == EMMessageStatusDelivering) {
+    if (aStatus == AgoraChatMessageStatusDelivering) {
         self.hidden = NO;
         [_label removeFromSuperview];
         [_failButton removeFromSuperview];
@@ -80,7 +80,7 @@
             make.width.equalTo(@20);
         }];
         [self.activityView startAnimating];
-    } else if (aStatus == EMMessageStatusFailed) {
+    } else if (aStatus == AgoraChatMessageStatusFailed) {
         self.hidden = NO;
         [_label removeFromSuperview];
         
@@ -92,7 +92,7 @@
             make.edges.equalTo(self);
             make.width.equalTo(@20);
         }];
-    } else if (aStatus == EMMessageStatusSucceed) {
+    } else if (aStatus == AgoraChatMessageStatusSucceed) {
         self.hidden = NO;
         [_failButton removeFromSuperview];
         

@@ -92,14 +92,14 @@
 - (void)updateLatestMsg
 {
     if(self.model && self.model.msgArray.count > 0) {
-        EMMessage*msg = [self.model.msgArray lastObject];
+        AgoraChatMessage*msg = [self.model.msgArray lastObject];
         if(msg) {
             NSDate* date = [NSDate dateWithTimeIntervalSince1970:msg.timestamp/1000];
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
             [formatter setDateFormat:@"HH:mm"];
             self.tsLable.text = [formatter stringFromDate:date];
-            if(msg.body.type == EMMessageBodyTypeText) {
-                EMTextMessageBody* textBody = (EMTextMessageBody*)msg.body;
+            if(msg.body.type == AgoraChatMessageBodyTypeText) {
+                AgoraChatTextMessageBody* textBody = (AgoraChatTextMessageBody*)msg.body;
                 self.msgLable.text = textBody.text;
             }
         }
@@ -112,7 +112,7 @@
     NSString* nickName = nil;
     NSString* avatarUrl = nil;
     if(_model && _model.msgArray.count > 0) {
-        for(EMMessage* msg in _model.msgArray) {
+        for(AgoraChatMessage* msg in _model.msgArray) {
             NSNumber* type = [msg.ext objectForKey:@"msgType"];
             if(type.integerValue == 1) {
                 nickName = [msg.ext objectForKey:@"nickName"];
@@ -124,9 +124,9 @@
     if(nickName.length == 0 || avatarUrl.length == 0) {
         if( self.uid.length > 0) {
             __weak typeof(self) weakself = self;
-            [[[EMClient sharedClient] userInfoManager] fetchUserInfoById:@[self.uid] completion:^(NSDictionary *aUserDatas, EMError *aError) {
+            [[[AgoraChatClient sharedClient] userInfoManager] fetchUserInfoById:@[self.uid] completion:^(NSDictionary *aUserDatas, AgoraChatError *aError) {
                 if(!aError) {
-                    EMUserInfo* userInfo = [aUserDatas objectForKey:weakself.uid];
+                    AgoraChatUserInfo* userInfo = [aUserDatas objectForKey:weakself.uid];
                     if(userInfo) {
                         dispatch_async(dispatch_get_main_queue(), ^{
                             if(userInfo.nickName.length > 0)

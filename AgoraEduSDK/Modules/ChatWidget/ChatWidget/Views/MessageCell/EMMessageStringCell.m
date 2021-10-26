@@ -9,7 +9,7 @@
 #import "EMMessageStringCell.h"
 #import <Masonry/Masonry.h>
 #import "UIImage+ChatExt.h"
-#import <HyphenateChat/HyphenateChat.h>
+#import <AgoraChat/AgoraChat.h>
 
 @interface EMMessageStringCell ()
 @property (nonatomic,strong) UIView* containerView;
@@ -88,8 +88,8 @@
     _recallMsgId = recallMsgId;
     if(recallMsgId.length > 0) {
         [self.reeditButton removeFromSuperview];
-        EMMessage* msgToDel = [[[EMClient sharedClient] chatManager] getMessageWithMessageId:recallMsgId];
-        if([msgToDel.from isEqualToString:[EMClient sharedClient].currentUsername]) {
+        AgoraChatMessage* msgToDel = [[[AgoraChatClient sharedClient] chatManager] getMessageWithMessageId:recallMsgId];
+        if([msgToDel.from isEqualToString:[AgoraChatClient sharedClient].currentUsername]) {
             [self.containerView addSubview:self.reeditButton];
             [_stringLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.top.equalTo(self.containerView).offset(5);

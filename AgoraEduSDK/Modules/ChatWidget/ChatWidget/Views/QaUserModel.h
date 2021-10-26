@@ -6,14 +6,14 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <HyphenateChat/HyphenateChat.h>
+#import <AgoraChat/AgoraChat.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface QaUserModel : NSObject
 @property (nonatomic,strong) NSString* userId;
 @property (nonatomic,strong) NSMutableArray* msgArray;
-- (void)pushMsg:(EMMessage*)msg;
+- (void)pushMsg:(AgoraChatMessage*)msg;
 @end
 
 NS_ASSUME_NONNULL_END

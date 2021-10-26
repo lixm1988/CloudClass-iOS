@@ -7,13 +7,13 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <HyphenateChat/HyphenateChat.h>
+#import <AgoraChat/AgoraChat.h>
 
 @interface EMMessageStatusView : UIView
 
 @property (nonatomic, copy) void (^resendCompletion)(void);
 
-- (void)setSenderStatus:(EMMessageStatus)aStatus
+- (void)setSenderStatus:(AgoraChatMessageStatus)aStatus
             isReadAcked:(BOOL)aIsReadAcked;
 
 @end

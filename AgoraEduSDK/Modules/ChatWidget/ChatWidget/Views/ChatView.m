@@ -368,8 +368,8 @@
         if (model.type == EMMessageTypeExtRecall) {
             cellString = [ChatWidget LocalizedString:@"ChatRecallAMessage"];
         }
-        if (model.emModel.body.type == EMMessageBodyTypeCmd) {
-            EMCmdMessageBody* cmdBody = (EMCmdMessageBody*)model.emModel.body;
+        if (model.emModel.body.type == AgoraChatMessageBodyTypeCmd) {
+            AgoraChatCmdMessageBody* cmdBody = (AgoraChatCmdMessageBody*)model.emModel.body;
             NSString*action = cmdBody.action;
             NSDictionary* ext = model.emModel.ext;
             if([action isEqualToString:@"DEL"]) {
@@ -377,7 +377,7 @@
                 NSLog(@"msgIdToDel:%@",msgId);
                 BOOL isRecall = NO;
                 if(msgId.length > 0) {
-                    EMMessage* msgToDel = [[[EMClient sharedClient] chatManager] getMessageWithMessageId:msgId];
+                    AgoraChatMessage* msgToDel = [[[AgoraChatClient sharedClient] chatManager] getMessageWithMessageId:msgId];
                     if(msgToDel) {
                         if([msgToDel.from isEqualToString:model.emModel.from]) {
                             isRecall = YES;
@@ -399,7 +399,7 @@
             if([action isEqualToString:@"mute"] || [action isEqualToString:@"unmute"]) {
                 NSString* muteMember = [ext objectForKey:@"muteMember"];
                 
-                if(muteMember.length > 0 && [[EMClient sharedClient].currentUsername isEqualToString:muteMember]) {
+                if(muteMember.length > 0 && [[AgoraChatClient sharedClient].currentUsername isEqualToString:muteMember]) {
                     NSString* muteNickname = [ext objectForKey:@"muteNickName"];
                     NSString* teacherNickName = [ext objectForKey:@"nickName"];
                     if([action isEqualToString:@"mute"]) {
@@ -458,12 +458,12 @@
     return _msgIdArray;
 }
 
-- (NSArray *)_formatMessages:(NSArray<EMMessage *> *)aMessages
+- (NSArray *)_formatMessages:(NSArray<AgoraChatMessage *> *)aMessages
 {
     NSMutableArray *formated = [[NSMutableArray alloc] init];
 
     for (int i = 0; i < [aMessages count]; i++) {
-        EMMessage *msg = aMessages[i];
+        AgoraChatMessage *msg = aMessages[i];
         if([self.msgIdArray containsObject:msg.messageId]) {
             continue;
         }else{
@@ -471,8 +471,8 @@
         }
 
         // cmd消息不展示
-        if(msg.body.type == EMMessageBodyTypeCmd) {
-            EMCmdMessageBody* cmdBody = (EMCmdMessageBody*)msg.body;
+        if(msg.body.type == AgoraChatMessageBodyTypeCmd) {
+            AgoraChatCmdMessageBody* cmdBody = (AgoraChatCmdMessageBody*)msg.body;
             if([cmdBody.action isEqualToString:@"DEL"]) {
                 NSString* msgIdToDel = [msg.ext objectForKey:@"msgId"];
                 if(msgIdToDel.length > 0) {
@@ -483,20 +483,20 @@
             }else if(!( [cmdBody.action isEqualToString:@"setAllMute"] || [cmdBody.action isEqualToString:@"removeAllMute"])){
                 if([cmdBody.action isEqualToString:@"mute"] || [cmdBody.action isEqualToString:@"unmute"]) {
                     NSString* muteMember = [msg.ext objectForKey:@"muteMember"];
-                    if(![[EMClient sharedClient].currentUsername isEqualToString:muteMember])
+                    if(![[AgoraChatClient sharedClient].currentUsername isEqualToString:muteMember])
                         continue;
                 }else
                     continue;
             }
         }
-        if(msg.body.type == EMMessageBodyTypeCustom) {
+        if(msg.body.type == AgoraChatMessageBodyTypeCustom) {
             continue;
         }
-        if (msg.chatType == EMChatTypeChat && !msg.isReadAcked && (msg.body.type == EMMessageBodyTypeText || msg.body.type == EMMessageBodyTypeLocation)) {
+        if (msg.chatType == AgoraChatTypeChat && !msg.isReadAcked && (msg.body.type == AgoraChatMessageBodyTypeText || msg.body.type == AgoraChatMessageBodyTypeLocation)) {
             if([self.msgsToDel containsObject:msg.messageId])
                 continue;
-            [[EMClient sharedClient].chatManager sendMessageReadAck:msg.messageId toUser:msg.conversationId completion:nil];
-        } else if (msg.chatType == EMChatTypeGroupChat && !msg.isReadAcked && (msg.body.type == EMMessageBodyTypeText || msg.body.type == EMMessageBodyTypeLocation)) {
+            [[AgoraChatClient sharedClient].chatManager sendMessageReadAck:msg.messageId toUser:msg.conversationId completion:nil];
+        } else if (msg.chatType == AgoraChatTypeGroupChat && !msg.isReadAcked && (msg.body.type == AgoraChatMessageBodyTypeText || msg.body.type == AgoraChatMessageBodyTypeLocation)) {
         }
         
         CGFloat interval = (self.msgTimelTag - msg.timestamp) / 1000;
@@ -528,7 +528,7 @@
     }
 }
 
-- (void)updateMsgs:(NSMutableArray<EMMessage*>*)msgArray
+- (void)updateMsgs:(NSMutableArray<AgoraChatMessage*>*)msgArray
 {
     NSArray *formated = [self _formatMessages:msgArray];
     [self.dataArray addObjectsFromArray:formated];
@@ -617,7 +617,7 @@
     if(aCell.model.emModel) {
         if(aCell.model.emModel.body.type == EMMessageTypeImage) {
             UIWindow * window=[[[UIApplication sharedApplication] delegate] window];
-            EMImageMessageBody* imageBody = (EMImageMessageBody*)aCell.model.emModel.body;
+            AgoraChatImageMessageBody* imageBody = (AgoraChatImageMessageBody*)aCell.model.emModel.body;
             if(imageBody.remotePath.length > 0) {
                 NSURL* url = [NSURL URLWithString:imageBody.remotePath];
                 if(url) {
@@ -633,7 +633,7 @@
 - (void)messageCellDidLongPress:(EMMessageCell *)aCell
 {
     NSString* title = nil;
-    if (aCell.model.emModel.direction == EMMessageDirectionSend) {
+    if (aCell.model.emModel.direction == AgoraChatMessageDirectionSend) {
         title = [ChatWidget LocalizedString:@"ChatRecall"];
     }else{
         if(ROLE_IS_TEACHER(self.chatManager.user.role)){
@@ -645,7 +645,7 @@
                      @{@"name": title, @"icon": @"icon_recall"}
                      ];
     
-    CustomPopOverView *view = [[CustomPopOverView alloc]initWithBounds:CGRectMake(0, 0, 60, 30) titleInfo:arr style:self.menuStyle];
+    CustomPopOverView *view = [[CustomPopOverView alloc]initWithBounds:CGRectMake(0, 0, 70, 30) titleInfo:arr style:self.menuStyle];
     view.delegate = self;
     [view showFrom:aCell.bubbleView alignStyle:CPAlignStyleCenter relativePosition:CPContentPositionAlwaysUp];
     self.menuIndexPath = [self.tableView indexPathForCell:aCell];
@@ -719,11 +719,11 @@
         return;
         
     if(aMsgId.length > 0) {
-        EMMessage* msg = [[[EMClient sharedClient] chatManager] getMessageWithMessageId:aMsgId];
+        AgoraChatMessage* msg = [[[AgoraChatClient sharedClient] chatManager] getMessageWithMessageId:aMsgId];
         if(msg.body.type == EMMessageTypeText) {
-            EMTextMessageBody* textBody = (EMTextMessageBody*)msg.body;
+            AgoraChatTextMessageBody* textBody = (AgoraChatTextMessageBody*)msg.body;
             [self.chatBar.inputButton setTitle:textBody.text forState:UIControlStateNormal];
-            self.chatBar.inputingView.inputField.text = textBody.text;
+            self.chatBar.inputingView.inputTextView.text = textBody.text;
         }
         if([self.chatBar respondsToSelector:@selector(InputAction)])
             [self.chatBar performSelector:@selector(InputAction)];
