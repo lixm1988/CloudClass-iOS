@@ -16,6 +16,8 @@
 #import "ChatWidgetDefine.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 #import "CustomPopOverView.h"
+#import "EMEmojiHelper.h"
+#import <AgoraUIEduBaseViews/AgoraUIEduBaseViews-Swift.h>
 
 #define CHATBAR_HEIGHT 30
 
@@ -179,7 +181,7 @@
     
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.width.equalTo(self);
-        make.top.width.equalTo(self).offset(24);
+        make.top.width.equalTo(self);
         make.bottom.equalTo(self).offset(-40);
     }];
     if(!ROLE_IS_TEACHER(self.chatManager.user.role)) {
@@ -211,7 +213,7 @@
     [self.newMsgsButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(self.tableView);
         make.bottom.equalTo(self.tableView).offset(-10);
-        make.width.equalTo(@110);
+        make.width.equalTo(@120);
         make.height.equalTo(@22);
     }];
     [self bringSubviewToFront:self.newMsgsButton];
@@ -221,6 +223,9 @@
 {
     _announcement = announcement;
     self.showAnnouncementView.hidden = _announcement.length == 0;
+    [self.tableView mas_updateConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.showAnnouncementView.hidden?self:@24);
+    }];
 //    announcement = [announcement stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
 //    NSCharacterSet *whitespaces = [NSCharacterSet whitespaceCharacterSet];
 //    NSPredicate *noEmptyStrings = [NSPredicate predicateWithFormat:@"SELF != ''"];
@@ -723,7 +728,7 @@
         if(msg.body.type == EMMessageTypeText) {
             AgoraChatTextMessageBody* textBody = (AgoraChatTextMessageBody*)msg.body;
             [self.chatBar.inputButton setTitle:textBody.text forState:UIControlStateNormal];
-            self.chatBar.inputingView.inputTextView.text = textBody.text;
+            self.chatBar.inputingView.inputTextView.attributedText = [EMEmojiHelper convertStrings: textBody.text];
         }
         if([self.chatBar respondsToSelector:@selector(InputAction)])
             [self.chatBar performSelector:@selector(InputAction)];
@@ -752,8 +757,21 @@
     }
     if([title isEqualToString:[ChatWidget LocalizedString:@"ChatRemove"]]) {
         EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
-        [self.chatManager deleteMessage:model.emModel.messageId];
         self.menuIndexPath = nil;
+        __weak typeof(self) weakself = self;
+        AgoraAlertLabelModel* cancelLable = [[AgoraAlertLabelModel alloc] init];
+        cancelLable.text = [ChatWidget LocalizedString:@"ChatCancel"];
+        AgoraAlertButtonModel* cancelButton = [[AgoraAlertButtonModel alloc] init];
+        cancelButton.titleLabel = cancelLable;
+        
+        AgoraAlertLabelModel* sureLable = [[AgoraAlertLabelModel alloc] init];
+        sureLable.text = [ChatWidget LocalizedString:@"ChatOK"];
+        AgoraAlertButtonModel* sureButton = [[AgoraAlertButtonModel alloc] init];
+        sureButton.titleLabel = sureLable;
+        sureButton.tapActionBlock = ^(NSInteger index) {
+            [weakself.chatManager deleteMessage:model.emModel.messageId];
+        };
+        [AgoraUtils showAlertWithImageModel:nil title:[ChatWidget LocalizedString:@"ChatRemoveMsgTitle"] message:[ChatWidget LocalizedString:@"ChatRemoveMsgText"] btnModels:@[cancelButton,sureButton]];
     }
     [pView removeFromSuperview];
     pView = nil;

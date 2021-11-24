@@ -122,6 +122,17 @@ static const NSString* kIsShowBadge = @"isShowBadge";
     self.tap = [[UITapGestureRecognizer alloc] initWithTarget:self
                                                        action:@selector(handleTapAction:)];
     [self.containView addGestureRecognizer:self.tap];
+    
+    [self.containerView addObserver:self forKeyPath:@"hidden" options:NSKeyValueObservingOptionNew context:nil];
+}
+
+- (void)observeValueForKeyPath:(nullable NSString *)keyPath ofObject:(nullable id)object change:(nullable NSDictionary<NSKeyValueChangeKey, id> *)change context:(nullable void *)context
+{
+    if([keyPath isEqualToString:@"hidden"]) {
+        if(self.containerView.isHidden) {
+            [self _showBadgeView:[self shouldShowBadge]];
+        }
+    }
 }
 
 - (void)layoutViews {
@@ -220,7 +231,7 @@ static const NSString* kIsShowBadge = @"isShowBadge";
     dispatch_async(dispatch_get_main_queue(), ^{
         NSArray<AgoraChatMessage*>* array = [weakself.chatManager msgArray];
         [self.chatView updateMsgs:array];
-        if(array.count > 0) {
+        if(array.count > 0 && self.chatManager.hasNewMsgs) {
             if([self.containerView isHidden]) {
                 // 最小化了
                 [self _showBadgeView:YES];
@@ -241,9 +252,12 @@ static const NSString* kIsShowBadge = @"isShowBadge";
         NSArray<AgoraChatMessage*>* array = [weakself.chatManager qaArray];
         [self.qaView updateMsgs:array];
         if(array.count > 0) {
-            if([self.containView isHidden]) {
+            if(self.chatTopView.currentTab != 1)
+                [self showQARedNotice:YES];
+            if([self.containerView isHidden]) {
                 // 最小化了
-                self.badgeView.hidden = NO;
+                //self.badgeView.hidden = NO;
+                [self _showBadgeView:YES];
             }
         }
     });
@@ -344,7 +358,7 @@ static const NSString* kIsShowBadge = @"isShowBadge";
 
 - (BOOL)shouldShowBadge
 {
-    return !self.chatTopView.chatBadgeView.hidden || !self.chatTopView.announcementbadgeView.hidden;
+    return !self.chatTopView.chatBadgeView.hidden || !self.chatTopView.announcementbadgeView.hidden || !self.chatTopView.qaBadgeView.hidden;
 }
 
 - (void)membersDidChanged
@@ -357,36 +371,10 @@ static const NSString* kIsShowBadge = @"isShowBadge";
 - (void)chatTopViewDidSelectedChanged:(NSUInteger)nSelected
 {
     self.scrollView.contentOffset = CGPointMake(self.containView.bounds.size.width * nSelected, 0);
-//    switch (nSelected) {
-//        case 0:
-////            [self.announcementView removeFromSuperview];
-////            [self.qaView removeFromSuperview];
-////            [self.membersView removeFromSuperview];
-////            [self.containView addSubview:self.chatView];
-//            self.scrollView.contentOffset = CGPointMake(self.containView.bounds.size.width * 0, 0);
-//            break;
-//        case 1:
-////            [self.announcementView removeFromSuperview];
-////            [self.chatView removeFromSuperview];
-////            [self.membersView removeFromSuperview];
-////            [self.containView addSubview:self.qaView];
-//            break;
-//        case 2:
-////            [self.announcementView removeFromSuperview];
-////            [self.qaView removeFromSuperview];
-////            [self.chatView removeFromSuperview];
-////            [self.containView addSubview:self.membersView];
-//            break;
-//        case 3:
-////            [self.chatView removeFromSuperview];
-////            [self.qaView removeFromSuperview];
-////            [self.membersView removeFromSuperview];
-////            [self.containView addSubview:self.announcementView];
-//            break;
-//
-//        default:
-//            break;
-//    }
+    if(nSelected == 1 && [self.qaView isKindOfClass:[QAUserListView class]]) {
+        QAUserListView* qaUserListView = (QAUserListView*)self.qaView;
+        self.chatTopView.isShowQARedNotice = [qaUserListView.showRedNoticeUsers count] > 0;
+    }
 }
 
 - (void)chatTopViewDidClickHide

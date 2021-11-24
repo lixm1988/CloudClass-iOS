@@ -68,7 +68,7 @@
     
     _roleTag = [[UITextField alloc] init];
     _roleTag.font = [UIFont systemFontOfSize:12];
-    _roleTag.textColor = [UIColor colorWithRed:88/255.0 green:99/255.0 blue:118/255.0 alpha:1.0];
+    _roleTag.textColor = [UIColor colorWithRed:53/255.0 green:123/255.0 blue:246/255.0 alpha:1.0];
     _roleTag.layer.cornerRadius = 8;
     _roleTag.layer.borderWidth = 1;
     _roleTag.layer.borderColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0].CGColor;

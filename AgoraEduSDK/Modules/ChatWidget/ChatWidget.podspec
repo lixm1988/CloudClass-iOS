@@ -26,6 +26,7 @@ Pod::Spec.new do |s|
 
       binary.dependency 'Masonry'
       binary.dependency 'AgoraChat'
+      binary.dependency 'AgoraUIEduBaseViews'
       binary.dependency 'SDWebImage'
       binary.dependency 'WHToast'
       binary.vendored_framework = '../../Frameworks/AgoraWidget.framework'
@@ -35,6 +36,7 @@ Pod::Spec.new do |s|
     s.subspec 'SOURCE' do |source|
       source.dependency 'Masonry'
       source.dependency 'AgoraChat'
+      source.dependency 'AgoraUIEduBaseViews'
       source.dependency 'SDWebImage'
       source.dependency 'WHToast'
       source.dependency "AgoraWidget"

@@ -59,18 +59,20 @@
               forControlEvents:UIControlEventTouchUpInside];
     
     self.backgroundColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0];
-    self.inputTextView = [[UITextView alloc] initWithFrame:CGRectMake(GAP,5,self.bounds.size.width - EMOJIBUTTON_WIDTH*2 - SENDBUTTON_WIDTH - GAP*2-20,
-                                                                    CONTAINVIEW_HEIGHT-10)];
+    self.inputTextView = [[UITextView alloc] initWithFrame:CGRectMake(GAP,8,self.bounds.size.width - EMOJIBUTTON_WIDTH*2 - SENDBUTTON_WIDTH - GAP*2-20,
+                                                                    CONTAINVIEW_HEIGHT-15)];
     self.inputTextView.layer.backgroundColor = [UIColor whiteColor].CGColor;
-    self.inputTextView.textContainerInset = UIEdgeInsetsMake(5, 15, 5, 10);
+    self.inputTextView.textContainerInset = UIEdgeInsetsMake(5, 12, 0, 10);
     //self.inputField.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 16, 0)];
     //self.inputField.leftView.userInteractionEnabled = NO;
     //self.inputField.leftViewMode = UITextFieldViewModeAlways;
     self.inputTextView.backgroundColor = [UIColor whiteColor];
+    self.inputTextView.font = [UIFont systemFontOfSize:17];
     self.inputTextView.placeholder = [ChatWidget LocalizedString:@"ChatPlaceholderText"];
-    self.inputTextView.layer.cornerRadius = 15;
+    self.inputTextView.layer.cornerRadius = 12;
     self.inputTextView.returnKeyType = UIReturnKeySend;
     self.inputTextView.delegate = self;
+    self.inputTextView.adjustsFontForContentSizeCategory = NO;
     self.inputTextView.inputAssistantItem.leadingBarButtonGroups = [NSArray array];
     self.inputTextView.inputAssistantItem.trailingBarButtonGroups = [NSArray array];
     [self addSubview:self.inputTextView];
@@ -194,11 +196,12 @@
     NSString* imageFileName = [[EMEmojiHelper sharedHelper].emojiFilesDic objectForKey:item];
     if(imageFileName.length == 0) return;
     attachMent.emojiStr = item;
-    attachMent.bounds = CGRectMake(0, 0, 12, 12);
+    attachMent.bounds = CGRectMake(0, -2, 17, 17);
     attachMent.image = [UIImage imageNamedFromBundle:imageFileName];
     NSAttributedString *imageStr = [NSAttributedString attributedStringWithAttachment:attachMent];
     [attrString appendAttributedString:imageStr];
     self.inputTextView.attributedText = attrString;
+    //self.inputTextView.font = [UIFont systemFontOfSize:17];
  }
 
  - (void)emojiDidDelete

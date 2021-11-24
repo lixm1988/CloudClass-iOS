@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface QAUserListView : QAView
 @property (nonatomic,weak) id parantView;
 @property (nonatomic,weak) ChatManager* chatManager;
+@property (nonatomic,strong) NSMutableSet* showRedNoticeUsers;
 @end
 
 NS_ASSUME_NONNULL_END

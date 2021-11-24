@@ -8,6 +8,7 @@
 
 #import "EMEmojiHelper.h"
 #import "UIImage+ChatExt.h"
+#import "EmojiTextAttachment.h"
 
 #define EMOJI_CODE_TO_SYMBOL(x) ((((0x808080F0 | (x & 0x3F000) >> 4) | (x & 0xFC0) << 10) | (x & 0x1C0000) << 18) | (x & 0x3F) << 24);
 
@@ -226,10 +227,11 @@ static EMEmojiHelper *helper = nil;
                  NSLog(@"%@",NSStringFromRange(matchRange));
                  NSString* str = [aString substringWithRange:matchRange];
                  if(str.length == 0) continue;
-                 NSTextAttachment* attachMent = [[NSTextAttachment alloc] init];
+                 EmojiTextAttachment* attachMent = [[EmojiTextAttachment alloc] init];
                  NSString* imageFileName = [dic objectForKey:str];
                  if(imageFileName.length == 0) continue;
-                 attachMent.bounds = CGRectMake(0, 0, 16, 16);
+                 attachMent.emojiStr = str;
+                 attachMent.bounds = CGRectMake(0, -4, 12, 12);
                  attachMent.image = [UIImage imageNamedFromBundle:imageFileName];
                  NSAttributedString *imageStr = [NSAttributedString attributedStringWithAttachment:attachMent];
                  [tmpAttrStr replaceCharactersInRange:matchRange withAttributedString:imageStr];

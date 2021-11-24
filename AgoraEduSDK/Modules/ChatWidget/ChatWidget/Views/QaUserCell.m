@@ -51,7 +51,8 @@
     [self.contentView addSubview:self.nickNameLable];
     [self.avatarImageView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.height.width.equalTo(@32);
-        make.left.top.equalTo(self.contentView).offset(3);
+        make.centerY.equalTo(self.contentView);
+        make.left.equalTo(self.contentView).offset(10);
     }];
     [self.nickNameLable mas_makeConstraints:^(MASConstraintMaker *make) {
             make.left.equalTo(self.avatarImageView.mas_right).offset(10);
@@ -67,11 +68,11 @@
         make.bottom.equalTo(self.contentView).offset(-3);
     }];
     [self.badgeView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.equalTo(self.avatarImageView).offset(-2);
+        make.right.equalTo(self.avatarImageView).offset(-1);
         make.top.equalTo(self.avatarImageView).offset(2);
-        make.width.height.equalTo(@6);
+        make.width.height.equalTo(@8);
     }];
-    self.badgeView.layer.cornerRadius = 3;
+    self.badgeView.layer.cornerRadius = 4;
     self.badgeView.hidden = YES;
     [self updateUserInfo];
     [self updateLatestMsg];

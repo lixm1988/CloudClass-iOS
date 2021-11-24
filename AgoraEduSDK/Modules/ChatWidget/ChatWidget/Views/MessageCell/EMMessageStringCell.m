@@ -10,6 +10,7 @@
 #import <Masonry/Masonry.h>
 #import "UIImage+ChatExt.h"
 #import <AgoraChat/AgoraChat.h>
+#import "ChatWidget+Localizable.h"
 
 @interface EMMessageStringCell ()
 @property (nonatomic,strong) UIView* containerView;
@@ -116,7 +117,7 @@
 {
     if(!_reeditButton) {
         _reeditButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        [_reeditButton setTitle:@"重新编辑" forState:UIControlStateNormal];
+        [_reeditButton setTitle:[ChatWidget LocalizedString:@"ChatReedit"] forState:UIControlStateNormal];
         _reeditButton.titleLabel.font = [UIFont systemFontOfSize:12];
         [_reeditButton addTarget:self action:@selector(reeditAction) forControlEvents:UIControlEventTouchUpInside];
     }

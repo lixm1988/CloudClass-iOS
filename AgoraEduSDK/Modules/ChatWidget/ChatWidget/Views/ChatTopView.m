@@ -162,13 +162,13 @@ const static NSInteger TAG_BASE = 1000;
 {
     NSInteger BUTTON_WIDTH = self.bounds.size.width/4;
     self.scrollView.frame = CGRectMake(0, 0, self.bounds.size.width, BUTTON_HEIGHT);
-    self.chatButton.frame = CGRectMake(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT-2);
-    self.qaButton.frame = CGRectMake(BUTTON_WIDTH, 0, BUTTON_WIDTH, BUTTON_HEIGHT-2);
-    self.membersButton.frame = CGRectMake(BUTTON_WIDTH*2, 0, BUTTON_WIDTH, BUTTON_HEIGHT-2);
+    self.chatButton.frame = CGRectMake(0, 0, BUTTON_WIDTH-10, BUTTON_HEIGHT-2);
+    self.qaButton.frame = CGRectMake(BUTTON_WIDTH-10, 0, BUTTON_WIDTH-10, BUTTON_HEIGHT-2);
+    self.membersButton.frame = CGRectMake(BUTTON_WIDTH*2-20, 0, BUTTON_WIDTH+20, BUTTON_HEIGHT-2);
     self.announcementButton.frame = CGRectMake(BUTTON_WIDTH*3, 0, BUTTON_WIDTH, BUTTON_HEIGHT-2);
-    self.selLine.frame = CGRectMake(0, BUTTON_HEIGHT-9, BUTTON_WIDTH, 4);
-    self.chatBadgeView.frame = CGRectMake(50, 10, 8, 8);
-    self.qaBadgeView.frame = CGRectMake(BUTTON_WIDTH*2-16, 10, 8, 8);
+    self.selLine.frame = CGRectMake(0, BUTTON_HEIGHT-9, BUTTON_WIDTH-10, 4);
+    self.chatBadgeView.frame = CGRectMake(BUTTON_WIDTH-18, 10, 8, 8);
+    self.qaBadgeView.frame = CGRectMake(BUTTON_WIDTH*2-28, 10, 8, 8);
     self.announcementbadgeView.frame = CGRectMake(BUTTON_WIDTH*3 + 50, 10, 8, 8);
 }
 
@@ -206,7 +206,7 @@ const static NSInteger TAG_BASE = 1000;
 
 - (void)setSelectButton:(UIButton*)button
 {
-    CGRect frame = CGRectMake(self.bounds.size.width/4*self.currentTab, BUTTON_HEIGHT-9, button.bounds.size.width, 9);
+    CGRect frame = CGRectMake(button.frame.origin.x, BUTTON_HEIGHT-9, button.frame.size.width, 9);
     self.selLine.frame = frame;
     [self.chatButton setTitleColor:button == self.chatButton?self.selTitleColor:self.unselTitleColor forState:UIControlStateNormal];
     [self.qaButton setTitleColor:button == self.qaButton?self.selTitleColor:self.unselTitleColor forState:UIControlStateNormal];
@@ -280,10 +280,13 @@ const static NSInteger TAG_BASE = 1000;
 - (void)setMembersCount:(NSUInteger)membersCount
 {
     _membersCount = membersCount;
-    if(membersCount > 0) {
-        [self.membersButton setTitle:[NSString stringWithFormat:@"%@(%d)",[ChatWidget LocalizedString:@"ChatMembers"],membersCount] forState:UIControlStateNormal];
+    if(membersCount > 99) {
+        [self.membersButton setTitle:[NSString stringWithFormat:@"%@(99+)",[ChatWidget LocalizedString:@"ChatMembers"]] forState:UIControlStateNormal];
     }else{
-        [self.membersButton setTitle:[NSString stringWithFormat:@"%@",[ChatWidget LocalizedString:@"ChatMembers"]] forState:UIControlStateNormal];
+        if(membersCount > 0) {
+            [self.membersButton setTitle:[NSString stringWithFormat:@"%@(%d)",[ChatWidget LocalizedString:@"ChatMembers"],membersCount] forState:UIControlStateNormal];
+        }else
+            [self.membersButton setTitle:[NSString stringWithFormat:@"%@",[ChatWidget LocalizedString:@"ChatMembers"]] forState:UIControlStateNormal];
     }
 }
 

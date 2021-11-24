@@ -645,7 +645,7 @@ private extension LoginViewController{
                         let sel1 = NSSelectorFromString("setLogConsoleState:");
                         AgoraClassroomSDK.perform(sel1,
                                             with: 1)
-        let avatarurl = "https://jhpyapp.oss-cn-shanghai.aliyuncs.com/dev/14525652014832967694crop_photo_a8fc31de-7212-4b44-8fe8-d1d1811f4f97.jpg?Expires=4788753506&OSSAccessKeyId=LTAI4G6bHBdYssCHbCVUtKS8&Signature=S%2FFrbsVBKf%2BD7Ua1dsoUCtQhGmU%3D"
+        let avatarurl = "https://download-sdk.oss-cn-beijing.aliyuncs.com/downloads/IMDemo/avatar/Image1.png"
 
         let config = AgoraEduLaunchConfig(userName: user,
                                           userUuid: userUuid,

@@ -10,6 +10,7 @@
 #import <Masonry/Masonry.h>
 #import "ChatWidget+Localizable.h"
 #import "ChatWidgetDefine.h"
+#import <AgoraUIEduBaseViews/AgoraUIEduBaseViews-Swift.h>
 
 @interface NilAnnouncementView ()
 @property (nonatomic,strong) UIImageView* nilAnnouncementImageView;
@@ -165,7 +166,7 @@
     if(!_countLable) {
         _countLable = [[UILabel alloc] init];
         _countLable.font = [UIFont systemFontOfSize:12];
-        _countLable.textColor = [UIColor colorWithRed:240/255.0 green:76/255.0 blue:54/255.0 alpha:1.0];
+        _countLable.textColor = [UIColor colorWithRed:125/255.0 green:135/255.0 blue:152/255.0 alpha:1.0];
         _countLable.textAlignment = NSTextAlignmentRight;
         _countLable.text = @"0/500";
     }
@@ -177,12 +178,18 @@
     if(!_announcementText) {
         _announcementText = [[UITextView alloc] init];
         _announcementText.text = self.announcement;
+        _announcementText.textContainerInset = UIEdgeInsetsMake(10, 10, 0, 10);
         _announcementText.textColor = [UIColor colorWithRed:25/255.0 green:25/255.0 blue:25/255.0 alpha:1.0];
         _announcementText.layer.borderWidth = 1;
         _announcementText.layer.cornerRadius = 4;
-        _announcementText.layer.borderColor = [UIColor blackColor].CGColor;
-        _announcementText.font = [UIFont systemFontOfSize:12];
+        _announcementText.layer.borderColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0].CGColor;
         _announcementText.delegate = self;
+        NSMutableParagraphStyle *paragraphStyle = [NSMutableParagraphStyle new];
+        paragraphStyle.lineSpacing = 5;
+        self.announcementText.typingAttributes = @{
+            NSFontAttributeName:[UIFont systemFontOfSize:12],
+            NSParagraphStyleAttributeName:paragraphStyle
+            };
     }
     return _announcementText;
 }
@@ -206,7 +213,7 @@
 {
     if(!_cancelButton) {
         _cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        _cancelButton.layer.borderColor = [UIColor blackColor].CGColor;
+        _cancelButton.layer.borderColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0].CGColor;
         _cancelButton.layer.borderWidth = 1;
         _cancelButton.layer.cornerRadius = 12;
         [_cancelButton setTitleColor:[UIColor colorWithRed:103/255.0 green:115/255.0 blue:134/255.0 alpha:1.0] forState:UIControlStateNormal];
@@ -246,8 +253,9 @@
 - (void)textViewDidChange:(UITextView *)textView
 {
     NSInteger count = textView.text.length;
-    self.errorLable.hidden = count < 500;
+    self.errorLable.hidden = count <= 500;
     self.countLable.text = [NSString stringWithFormat:@"%d/500",count];
+    self.countLable.textColor = count <= 500?[UIColor colorWithRed:125/255.0 green:135/255.0 blue:152/255.0 alpha:1.0]:[UIColor colorWithRed:240/255.0 green:76/255.0 blue:54/255.0 alpha:1.0];
 }
 
 - (void)textViewDidBeginEditing:(UITextView *)textView
@@ -326,10 +334,15 @@
     [self.announcementText setEditable:NO];
     [self addSubview:self.announcementText];
     self.announcementText.textColor = [UIColor colorWithRed:25/255.0 green:25/255.0 blue:25/255.0 alpha:1.0];
-    self.announcementText.font = [UIFont systemFontOfSize:12];
     //self.announcementText.contentVerticalAlignment = UIControlContentVerticalAlignmentTop;
     //[self.announcementText sizeToFit];
     //self.announcementText.numberOfLines = 0;
+    NSMutableParagraphStyle *paragraphStyle = [NSMutableParagraphStyle new];
+    paragraphStyle.lineSpacing = 5;
+    self.announcementText.typingAttributes = @{
+        NSFontAttributeName:[UIFont systemFontOfSize:12],
+        NSParagraphStyleAttributeName:paragraphStyle
+        };
     self.announcementText.textAlignment = NSTextAlignmentLeft;
     [self.announcementText mas_makeConstraints:^(MASConstraintMaker *make) {
         make.height.equalTo(self).with.offset(-40);
@@ -396,15 +409,30 @@
 
 - (void)removeAction
 {
-    [self.delegate PublishAnnouncement:@""];
+    __weak typeof(self) weakself = self;
+    AgoraAlertLabelModel* cancelLable = [[AgoraAlertLabelModel alloc] init];
+    cancelLable.text = [ChatWidget LocalizedString:@"ChatCancel"];
+    AgoraAlertButtonModel* cancelButton = [[AgoraAlertButtonModel alloc] init];
+    cancelButton.titleLabel = cancelLable;
+    
+    AgoraAlertLabelModel* sureLable = [[AgoraAlertLabelModel alloc] init];
+    sureLable.text = [ChatWidget LocalizedString:@"ChatOK"];
+    AgoraAlertButtonModel* sureButton = [[AgoraAlertButtonModel alloc] init];
+    sureButton.titleLabel = sureLable;
+    sureButton.tapActionBlock = ^(NSInteger index) {
+        [weakself.delegate PublishAnnouncement:@""];
+    };
+    [AgoraUtils showAlertWithImageModel:nil title:[ChatWidget LocalizedString:@"ChatRemoveAnnouncementTitle"] message:[ChatWidget LocalizedString:@"ChatRemoveAnnouncementText"] btnModels:@[cancelButton,sureButton]];
+    
 }
 
 - (void)setEdit:(NSNumber*)isEdit
 {
     BOOL bEdit = [isEdit boolValue];
-    
     self.editView.hidden = !bEdit;
     if(bEdit) {
+        self.editView.announcement = self.announcement;
+        self.editView.announcementText.text = self.announcement;
         self.nilAnnouncementView.hidden = YES;
         self.announcementText.hidden = YES;
         self.updateButton.hidden = YES;

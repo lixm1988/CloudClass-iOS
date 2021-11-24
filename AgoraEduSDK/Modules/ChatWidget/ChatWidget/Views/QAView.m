@@ -45,6 +45,7 @@
     
     self.nilMsgLable = [[UILabel alloc] init];
     self.nilMsgLable.text = [ChatWidget LocalizedString:@"ChatEmptyQA"];
+    self.nilMsgLable.textColor =  [UIColor colorWithRed:125/255.0 green:135/255.0 blue:152/255.0 alpha:1.0];
     self.nilMsgLable.font = [UIFont systemFontOfSize:12];
     self.nilMsgLable.textAlignment = NSTextAlignmentCenter;
     [self addSubview:self.nilMsgLable];
@@ -64,6 +65,12 @@
 @property (strong, nonatomic) NSMutableArray *msgIdArray;
 @property (nonatomic, strong) NSMutableArray<NSString*>* msgsToDel;
 @property (nonatomic, strong) NilQAMessagesView* nilQAMsgView;
+// 新消息按钮
+@property (nonatomic, strong) UIButton* newMsgsButton;
+// 消息列表是否在最底部
+@property (nonatomic) BOOL curMsgInBottom;
+// 新消息条数统计
+@property (atomic) NSUInteger newMsgsCount;
 @end
 
 @implementation QAView
@@ -80,6 +87,7 @@
 {
     self = [super initWithFrame:frame];
     if(self) {
+        self.curMsgInBottom = YES;
         [self setupSubViews];
     }
     return self;
@@ -99,17 +107,26 @@
     
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.left.width.equalTo(self);
-            make.bottom.equalTo(self).offset(-CHATBAR_HEIGHT);
+            make.bottom.equalTo(self).offset(-CHATBAR_HEIGHT-5);
     }];
     [self.chatBar mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.bottom.right.equalTo(self).offset(-10);
-        make.left.equalTo(self).offset(10);
+        make.bottom.right.equalTo(self).offset(-5);
+        make.left.equalTo(self).offset(5);
         make.height.equalTo(@CHATBAR_HEIGHT);
     }];
     [self.nilQAMsgView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.left.right.equalTo(self);
-        make.bottom.equalTo(self).offset(-CHATBAR_HEIGHT);
+        make.bottom.equalTo(self).offset(-CHATBAR_HEIGHT-5);
     }];
+    
+    [self addSubview:self.newMsgsButton];
+    [self.newMsgsButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self.tableView);
+        make.bottom.equalTo(self.tableView).offset(-5);
+        make.width.equalTo(@120);
+        make.height.equalTo(@22);
+    }];
+    [self bringSubviewToFront:self.newMsgsButton];
 }
 
 - (UITableView *)tableView
@@ -168,7 +185,55 @@
    return _nilQAMsgView;
 }
 
+- (UIButton*)newMsgsButton
+{
+    if(!_newMsgsButton) {
+        _newMsgsButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [_newMsgsButton setTitle:[ChatWidget LocalizedString:@"ChatNewMsgs"] forState:UIControlStateNormal];
+        [_newMsgsButton addTarget:self action:@selector(newMsgsAction) forControlEvents:UIControlEventTouchUpInside];
+        _newMsgsButton.hidden = YES;
+        _newMsgsButton.layer.cornerRadius = 10;
+        _newMsgsButton.layer.borderWidth = 1;
+        _newMsgsButton.layer.borderColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0].CGColor;
+        _newMsgsButton.titleEdgeInsets = UIEdgeInsetsMake(0, 8, 0, 0);
+        _newMsgsButton.backgroundColor = [UIColor whiteColor];
+        _newMsgsButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _newMsgsButton.imageEdgeInsets = UIEdgeInsetsMake(2, 10, 2, 86);
+        [_newMsgsButton setImage:[UIImage imageNamedFromBundle:@"icon_hide"] forState:UIControlStateNormal];
+        _newMsgsButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_newMsgsButton setTintColor:[UIColor colorWithRed:53/255.0 green:123/255.0 blue:246/255.0 alpha:1.0]];
+        _newMsgsButton.layer.shadowColor = [UIColor colorWithRed:47/255.0 green:65/255.0 blue:146/255.0 alpha:0.15].CGColor;
+        _newMsgsButton.layer.shadowOffset = CGSizeMake(0,0);
+        _newMsgsButton.layer.shadowOpacity = 1;
+        _newMsgsButton.layer.shadowRadius = 5;
+    }
+    return _newMsgsButton;
+}
+
+- (void)newMsgsAction
+{
+    [self scrollToBottomRow];
+    self.newMsgsCount = 0;
+    self.newMsgsButton.hidden = YES;
+}
+
 #pragma mark - UITableViewDelegate
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    CGFloat height = scrollView.frame.size.height;
+    CGFloat contentOffsetY = scrollView.contentOffset.y;
+    CGFloat bottomOffset = scrollView.contentSize.height - contentOffsetY;
+    if (bottomOffset <= height)
+    {
+        self.curMsgInBottom = YES;
+        self.newMsgsButton.hidden = YES;
+        self.newMsgsCount = 0;
+    }else
+    {
+        self.curMsgInBottom = NO;
+    }
+}
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     return 1;
@@ -220,8 +285,10 @@
         [self.tableView layoutIfNeeded];
         NSInteger toRow = self.dataArray.count - 1;
         NSIndexPath *toIndexPath = [NSIndexPath indexPathForRow:toRow inSection:0];
+        __weak typeof(self) weakself = self;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self.tableView scrollToRowAtIndexPath:toIndexPath atScrollPosition:UITableViewScrollPositionBottom animated:YES];
+            [weakself.tableView scrollToRowAtIndexPath:toIndexPath atScrollPosition:UITableViewScrollPositionBottom animated:NO];
+            weakself.curMsgInBottom = YES;
         });
     }
 }
@@ -233,7 +300,15 @@
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         [weakself.tableView reloadData];
-        [weakself scrollToBottomRow];
+        if(!weakself.curMsgInBottom)
+        {
+            weakself.newMsgsButton.hidden = NO;
+            weakself.newMsgsCount += formated.count;
+            [weakself.newMsgsButton setTitle:[NSString stringWithFormat:@"%d %@",weakself.newMsgsCount,[ChatWidget LocalizedString:@"ChatNewMsgs"]] forState:UIControlStateNormal];
+        }
+        else{
+            [weakself scrollToBottomRow];
+        }
     });
 }
 
@@ -279,6 +354,7 @@
 #pragma mark - ChatBarDelegate
 - (void)msgWillSend:(NSString*)aMsgText
 {
+    self.curMsgInBottom = YES;
     ChatMsgType type = self.asker.length == 0?ChatMsgTypeAsk:ChatMsgTypeAnswer;
     [self.delegate msgWillSend:aMsgText type:type asker:self.asker];
 }

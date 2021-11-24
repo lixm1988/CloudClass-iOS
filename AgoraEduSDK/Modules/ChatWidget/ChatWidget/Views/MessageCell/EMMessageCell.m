@@ -175,15 +175,15 @@
     [self.contentView addSubview:_bubbleView];
     if (self.direction == AgoraChatMessageDirectionSend) {
         [_bubbleView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(self.avatarView.mas_bottom).offset(8);
-            make.bottom.equalTo(self.contentView).offset(-15);
+            make.top.equalTo(self.avatarView.mas_bottom).offset(3);
+            make.bottom.equalTo(self.contentView).offset(-3);
             make.left.greaterThanOrEqualTo(self.contentView).offset(46);
             make.right.equalTo(self.contentView).offset(-12);
         }];
     } else {
         [_bubbleView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(self.avatarView.mas_bottom).offset(8);
-            make.bottom.equalTo(self.contentView).offset(-15);
+            make.top.equalTo(self.avatarView.mas_bottom).offset(3);
+            make.bottom.equalTo(self.contentView).offset(-3);
             make.left.equalTo(self.contentView).offset(12);
             make.right.lessThanOrEqualTo(self.contentView).offset(-46);
         }];

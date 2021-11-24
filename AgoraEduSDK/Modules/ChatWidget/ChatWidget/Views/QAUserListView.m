@@ -21,7 +21,6 @@
 @property (nonatomic,strong) TeacherQAView* currentQAView;
 @property (nonatomic) BOOL showQAView;
 @property (nonatomic,strong) NSMutableDictionary* latestMsgs;
-@property (nonatomic,strong) NSMutableSet* showRedNoticeUsers;
 @end
 
 @implementation QAUserListView
@@ -112,7 +111,6 @@
         if(self.qaUserListView.isHidden)
             self.qaUserListView.hidden = NO;
     }
-    
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(refresh) object:nil];
     [self performSelector:@selector(refresh) withObject:nil afterDelay:0.3];
 }
@@ -224,7 +222,7 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return 40;
+    return 50;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -243,6 +241,8 @@
 - (void)qaUserCellDidSelected:(UITableViewCell *)aCell
 {
     QaUserCell* cell = (QaUserCell*)aCell;
+    self.qaUserListView.hidden = YES;
+    self.showQAView = YES;
     if(![self.subviews containsObject:self.currentQAView])
     {
         [self addSubview:self.currentQAView];
