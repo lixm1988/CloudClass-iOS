@@ -33,7 +33,7 @@
 - (void)setupSubViews
 {
     self.nilMsgImageView = [[UIImageView alloc] init];
-    self.nilMsgImageView.image = [UIImage imageNamedFromBundle:@"icon_nil"];
+    self.nilMsgImageView.image = [UIImage imageNamedFromBundle:@"noMessage"];
     [self addSubview:self.nilMsgImageView];
     [self.nilMsgImageView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(self);
@@ -143,7 +143,8 @@
     [self addSubview:self.nilMsgView];
     [self.nilMsgView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.width.height.equalTo(@100);
-        make.center.equalTo(self);
+        make.centerX.equalTo(self);
+        make.centerX.equalTo(self).offset(-10);
     }];
     
     self.showAnnouncementView = [[ShowAnnouncementView alloc] init];
@@ -331,8 +332,8 @@
         if (model.type == EMMessageTypeExtRecall) {
             cellString = [ChatWidget LocalizedString:@"ChatRecallAMessage"];
         }
-        if (model.emModel.body.type == EMMessageBodyTypeCmd) {
-            EMCmdMessageBody* cmdBody = (EMCmdMessageBody*)model.emModel.body;
+        if (model.emModel.body.type == AgoraChatMessageBodyTypeCmd) {
+            AgoraChatCmdMessageBody* cmdBody = (AgoraChatCmdMessageBody*)model.emModel.body;
             NSString*action = cmdBody.action;
             NSDictionary* ext = model.emModel.ext;
             if([action isEqualToString:@"DEL"]) {
@@ -347,7 +348,7 @@
             if([action isEqualToString:@"mute"] || [action isEqualToString:@"unmute"]) {
                 NSString* muteMember = [ext objectForKey:@"muteMember"];
                 
-                if(muteMember.length > 0 && [[EMClient sharedClient].currentUsername isEqualToString:muteMember]) {
+                if(muteMember.length > 0 && [[AgoraChatClient sharedClient].currentUsername isEqualToString:muteMember]) {
                     NSString* muteNickname = [ext objectForKey:@"muteNickName"];
                     NSString* teacherNickName = [ext objectForKey:@"nickName"];
                     if([action isEqualToString:@"mute"]) {
@@ -402,12 +403,12 @@
     return _msgIdArray;
 }
 
-- (NSArray *)_formatMessages:(NSArray<EMMessage *> *)aMessages
+- (NSArray *)_formatMessages:(NSArray<AgoraChatMessage *> *)aMessages
 {
     NSMutableArray *formated = [[NSMutableArray alloc] init];
 
     for (int i = 0; i < [aMessages count]; i++) {
-        EMMessage *msg = aMessages[i];
+        AgoraChatMessage *msg = aMessages[i];
         if([self.msgIdArray containsObject:msg.messageId]) {
             continue;
         }else{
@@ -415,8 +416,8 @@
         }
 
         // cmd消息不展示
-        if(msg.body.type == EMMessageBodyTypeCmd) {
-            EMCmdMessageBody* cmdBody = (EMCmdMessageBody*)msg.body;
+        if(msg.body.type == AgoraChatMessageBodyTypeCmd) {
+            AgoraChatCmdMessageBody* cmdBody = (AgoraChatCmdMessageBody*)msg.body;
             if([cmdBody.action isEqualToString:@"DEL"]) {
                 NSString* msgIdToDel = [msg.ext objectForKey:@"msgId"];
                 if(msgIdToDel.length > 0) {
@@ -427,20 +428,20 @@
             }else if(!( [cmdBody.action isEqualToString:@"setAllMute"] || [cmdBody.action isEqualToString:@"removeAllMute"])){
                 if([cmdBody.action isEqualToString:@"mute"] || [cmdBody.action isEqualToString:@"unmute"]) {
                     NSString* muteMember = [msg.ext objectForKey:@"muteMember"];
-                    if(![[EMClient sharedClient].currentUsername isEqualToString:muteMember])
+                    if(![[AgoraChatClient sharedClient].currentUsername isEqualToString:muteMember])
                         continue;
                 }else
                     continue;
             }
         }
-        if(msg.body.type == EMMessageBodyTypeCustom) {
+        if(msg.body.type == AgoraChatMessageBodyTypeCustom) {
             continue;
         }
-        if (msg.chatType == EMChatTypeChat && !msg.isReadAcked && (msg.body.type == EMMessageBodyTypeText || msg.body.type == EMMessageBodyTypeLocation)) {
+        if (msg.chatType == AgoraChatTypeChat && !msg.isReadAcked && (msg.body.type == AgoraChatMessageBodyTypeText || msg.body.type == AgoraChatMessageBodyTypeLocation)) {
             if([self.msgsToDel containsObject:msg.messageId])
                 continue;
-            [[EMClient sharedClient].chatManager sendMessageReadAck:msg.messageId toUser:msg.conversationId completion:nil];
-        } else if (msg.chatType == EMChatTypeGroupChat && !msg.isReadAcked && (msg.body.type == EMMessageBodyTypeText || msg.body.type == EMMessageBodyTypeLocation)) {
+            [[AgoraChatClient sharedClient].chatManager sendMessageReadAck:msg.messageId toUser:msg.conversationId completion:nil];
+        } else if (msg.chatType == AgoraChatTypeGroupChat && !msg.isReadAcked && (msg.body.type == AgoraChatMessageBodyTypeText || msg.body.type == AgoraChatMessageBodyTypeLocation)) {
         }
         
         CGFloat interval = (self.msgTimelTag - msg.timestamp) / 1000;
@@ -472,7 +473,7 @@
     }
 }
 
-- (void)updateMsgs:(NSMutableArray<EMMessage*>*)msgArray
+- (void)updateMsgs:(NSMutableArray<AgoraChatMessage*>*)msgArray
 {
     NSArray *formated = [self _formatMessages:msgArray];
     [self.dataArray addObjectsFromArray:formated];
@@ -519,17 +520,17 @@
     __weak typeof(self) weakself = self;
     EMMessageModel *model = [self.dataArray objectAtIndex:self.menuIndexPath.row];
     
-    [[EMClient sharedClient].chatManager recallMessageWithMessageId:model.emModel.messageId completion:^(EMError *aError) {
+    [[AgoraChatClient sharedClient].chatManager recallMessageWithMessageId:model.emModel.messageId completion:^(AgoraChatError *aError) {
         if (!aError) {
-            EMTextMessageBody *body = [[EMTextMessageBody alloc] initWithText:[ChatWidget LocalizedString:@"ChatRecallAMessage"]];
-            NSString *from = [[EMClient sharedClient] currentUsername];
+            AgoraChatTextMessageBody *body = [[AgoraChatTextMessageBody alloc] initWithText:[ChatWidget LocalizedString:@"ChatRecallAMessage"]];
+            NSString *from = [[AgoraChatClient sharedClient] currentUsername];
             NSString *to = self.chatManager.chatRoomId;
-            EMMessage *message = [[EMMessage alloc] initWithConversationID:to from:from to:to body:body ext:@{MSG_EXT_RECALL:@(YES)}];
-            message.chatType = EMChatTypeChatRoom;
+            AgoraChatMessage *message = [[AgoraChatMessage alloc] initWithConversationID:to from:from to:to body:body ext:@{MSG_EXT_RECALL:@(YES)}];
+            message.chatType = AgoraChatTypeChatRoom;
             message.isRead = YES;
             message.timestamp = model.emModel.timestamp;
             message.localTime = model.emModel.localTime;
-            EMConversation* roomConvesation = [[[EMClient sharedClient] chatManager] getConversationWithConvId:self.chatManager.chatRoomId];
+            AgoraChatConversation* roomConvesation = [[[AgoraChatClient sharedClient] chatManager] getConversationWithConvId:self.chatManager.chatRoomId];
             [roomConvesation insertMessage:message error:nil];
             
             EMMessageModel *model = [[EMMessageModel alloc] initWithEMMessage:message];
@@ -547,7 +548,7 @@
     [self becomeFirstResponder];
     
     NSMutableArray *items = [[NSMutableArray alloc] init];
-    if (aModel.emModel.direction == EMMessageDirectionSend) {
+    if (aModel.emModel.direction == AgoraChatMessageDirectionSend) {
         [items addObject:self.recallMenuItem];
     }
     

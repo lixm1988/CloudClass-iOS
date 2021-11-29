@@ -11,7 +11,7 @@
 
 @implementation EMMessageBubbleView
 
-- (instancetype)initWithDirection:(EMMessageDirection)aDirection
+- (instancetype)initWithDirection:(AgoraChatMessageDirection)aDirection
                              type:(EMMessageType)aType
 {
     self = [super init];
@@ -25,7 +25,7 @@
 
 - (void)setupBubbleBackgroundImage
 {
-    if (self.direction == EMMessageDirectionSend) {
+    if (self.direction == AgoraChatMessageDirectionSend) {
         self.backgroundColor = [UIColor colorWithRed:225/255.0 green:235/255.0 blue:252/255.0 alpha:1.0];
         //self.image = [[UIImage imageNamedFromBundle:@"msg_bg_send"] stretchableImageWithLeftCapWidth:15 topCapHeight:15];
     } else {

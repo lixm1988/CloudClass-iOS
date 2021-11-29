@@ -11,7 +11,7 @@
 
 @implementation EMMsgTextBubbleView
 
-- (instancetype)initWithDirection:(EMMessageDirection)aDirection
+- (instancetype)initWithDirection:(AgoraChatMessageDirection)aDirection
                              type:(EMMessageType)aType
 {
     self = [super initWithDirection:aDirection type:aType];
@@ -38,7 +38,7 @@
     }];
     
     self.textLabel.textColor = [UIColor blackColor];
-    if (self.direction == EMMessageDirectionSend) {
+    if (self.direction == AgoraChatMessageDirectionSend) {
         [self.textLabel mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self).offset(10);
             make.left.equalTo(self.mas_left).offset(10);
@@ -57,7 +57,7 @@
 
 - (void)setModel:(EMMessageModel *)model
 {
-    EMTextMessageBody *body = (EMTextMessageBody *)model.emModel.body;
+    AgoraChatTextMessageBody *body = (AgoraChatTextMessageBody *)model.emModel.body;
     self.textLabel.text = [EMEmojiHelper convertEmoji:body.text];
 }
 

@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <HyphenateChat/HyphenateChat.h>
+#import <AgoraChat/AgoraChat.h>
 #import <Masonry/Masonry.h>
 
 #define MSG_EXT_GIF_ID @"em_expression_id"
@@ -33,9 +33,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) NSString *readReceiptCount;
 
-@property (nonatomic, strong) EMMessage *emModel;
+@property (nonatomic, strong) AgoraChatMessage *emModel;
 
-@property (nonatomic) EMMessageDirection direction;
+@property (nonatomic) AgoraChatMessageDirection direction;
 
 @property (nonatomic) EMMessageType type;
 
@@ -43,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic) BOOL isPlaying;
 
-- (instancetype)initWithEMMessage:(EMMessage *)aMsg;
+- (instancetype)initWithEMMessage:(AgoraChatMessage *)aMsg;
 
 @end
 

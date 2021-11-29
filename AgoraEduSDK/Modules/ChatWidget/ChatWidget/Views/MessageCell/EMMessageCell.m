@@ -32,7 +32,7 @@
 
 @implementation EMMessageCell
 
-- (instancetype)initWithDirection:(EMMessageDirection)aDirection
+- (instancetype)initWithDirection:(AgoraChatMessageDirection)aDirection
                              type:(EMMessageType)aType
 {
     NSString *identifier = [EMMessageCell cellIdentifierWithDirection:aDirection type:aType];
@@ -58,11 +58,11 @@
 
 #pragma mark - Class Methods
 
-+ (NSString *)cellIdentifierWithDirection:(EMMessageDirection)aDirection
++ (NSString *)cellIdentifierWithDirection:(AgoraChatMessageDirection)aDirection
                                      type:(EMMessageType)aType
 {
     NSString *identifier = @"EMMsgCellDirectionSend";
-    if (aDirection == EMMessageDirectionReceive) {
+    if (aDirection == AgoraChatMessageDirectionReceive) {
         identifier = @"EMMsgCellDirectionRecv";
     }
     
@@ -125,7 +125,7 @@
     _roleTag.enabled = NO;
     [self.contentView addSubview:_roleTag];
     
-    if (self.direction == EMMessageDirectionSend) {
+    if (self.direction == AgoraChatMessageDirectionSend) {
         [_avatarView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self.contentView).offset(5);
             make.right.equalTo(self.contentView).offset(-10);
@@ -172,7 +172,7 @@
     _bubbleView.clipsToBounds = YES;
     _bubbleView.layer.cornerRadius = 4;
     [self.contentView addSubview:_bubbleView];
-    if (self.direction == EMMessageDirectionSend) {
+    if (self.direction == AgoraChatMessageDirectionSend) {
         [_bubbleView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self.avatarView.mas_bottom).offset(8);
             make.bottom.equalTo(self.contentView).offset(-15);
@@ -190,7 +190,7 @@
 
     _statusView = [[EMMessageStatusView alloc] init];
     [self.contentView addSubview:_statusView];
-    if (self.direction == EMMessageDirectionSend) {
+    if (self.direction == AgoraChatMessageDirectionSend) {
         [_statusView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.centerY.equalTo(self.bubbleView.mas_centerY);
             make.right.equalTo(self.bubbleView.mas_left).offset(-8);
@@ -226,7 +226,7 @@
     _readReceiptBtn.titleLabel.font = [UIFont systemFontOfSize: 10.0];
     [_readReceiptBtn addTarget:self action:@selector(readReceiptDetilAction) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:_readReceiptBtn];
-    if(self.direction == EMMessageDirectionSend) {
+    if(self.direction == AgoraChatMessageDirectionSend) {
         [_readReceiptBtn mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self.bubbleView.mas_bottom).offset(2);
             make.right.equalTo(self.bubbleView.mas_right);
@@ -291,7 +291,7 @@
         self.roleTag.hidden = YES;
     }
     
-    if (model.direction == EMMessageDirectionSend) {
+    if (model.direction == AgoraChatMessageDirectionSend) {
         
         [self.statusView setSenderStatus:model.emModel.status isReadAcked:model.emModel.isReadAcked];
         if(self.roleTag.isHidden) {

@@ -148,7 +148,7 @@ static const NSString* kIsShowBadge = @"isShowBadge";
 {
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSArray<EMMessage*>* array = [weakself.chatManager msgArray];
+        NSArray<AgoraChatMessage*>* array = [weakself.chatManager msgArray];
         [self.chatView updateMsgs:array];
         if(array.count > 0) {
             if([self.containerView isHidden]) {
@@ -164,7 +164,7 @@ static const NSString* kIsShowBadge = @"isShowBadge";
     
 }
 
-- (void)chatMessageDidSend:(EMMessage*)aInfo
+- (void)chatMessageDidSend:(AgoraChatMessage*)aInfo
 {
     [self.chatView updateMsgs:@[aInfo]];
 }

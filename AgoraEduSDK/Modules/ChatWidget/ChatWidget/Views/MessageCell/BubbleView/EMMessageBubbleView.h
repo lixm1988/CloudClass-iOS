@@ -12,13 +12,13 @@
 
 @interface EMMessageBubbleView : UIImageView
 
-@property (nonatomic, readonly) EMMessageDirection direction;
+@property (nonatomic, readonly) AgoraChatMessageDirection direction;
 
 @property (nonatomic, readonly) EMMessageType type;
 
 @property (nonatomic, strong) EMMessageModel *model;
 
-- (instancetype)initWithDirection:(EMMessageDirection)aDirection
+- (instancetype)initWithDirection:(AgoraChatMessageDirection)aDirection
                              type:(EMMessageType)aType;
 
 - (void)setupBubbleBackgroundImage;
