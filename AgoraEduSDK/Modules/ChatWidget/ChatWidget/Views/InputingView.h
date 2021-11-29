@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface InputingView : UIView
 @property (nonatomic,weak) id<InputingViewDelegate> delegate;
 @property (nonatomic,strong) UIButton* sendButton;
-@property (nonatomic,strong) UITextField* inputField;
+@property (nonatomic,strong) UITextView* inputField;
 @property (nonatomic,strong) UIButton* emojiButton;
 @property (nonatomic,strong) UIButton* exitInputButton;
 - (void)changeKeyBoardType;

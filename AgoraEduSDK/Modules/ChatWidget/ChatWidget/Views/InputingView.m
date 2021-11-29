@@ -9,6 +9,8 @@
 #import "EmojiKeyboardView.h"
 #import "UIImage+ChatExt.h"
 #import "ChatWidget+Localizable.h"
+#import "EMEmojiHelper.h"
+#import "EmojiTextAttachment.h"
 
 #define CONTAINVIEW_HEIGHT 40
 #define SENDBUTTON_HEIGHT 30
@@ -17,7 +19,7 @@
 #define EMOJIBUTTON_WIDTH 40
 #define GAP 60
 
-@interface InputingView ()<UITextFieldDelegate,EmojiKeyboardDelegate>
+@interface InputingView ()<UITextViewDelegate,EmojiKeyboardDelegate>
 @property (nonatomic,strong) EmojiKeyboardView *emojiKeyBoardView;
 @end
 
@@ -55,15 +57,14 @@
               forControlEvents:UIControlEventTouchUpInside];
     
     self.backgroundColor = [UIColor colorWithRed:236/255.0 green:236/255.0 blue:241/255.0 alpha:1.0];
-    self.inputField = [[UITextField alloc] initWithFrame:CGRectMake(GAP,5,self.bounds.size.width - EMOJIBUTTON_WIDTH - SENDBUTTON_WIDTH - GAP*2-20,
-                                                                    CONTAINVIEW_HEIGHT-10)];
+    self.inputField = [[UITextView alloc] initWithFrame:CGRectMake(GAP,5,self.bounds.size.width - EMOJIBUTTON_WIDTH*2 - SENDBUTTON_WIDTH - GAP*2-20,CONTAINVIEW_HEIGHT-10)];
     self.inputField.layer.backgroundColor = [UIColor whiteColor].CGColor;
     self.inputField.layer.cornerRadius = 16;
-    self.inputField.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 16, 0)];
-    self.inputField.leftView.userInteractionEnabled = NO;
-    self.inputField.leftViewMode = UITextFieldViewModeAlways;
+    //self.inputField.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 16, 0)];
+    //self.inputField.leftView.userInteractionEnabled = NO;
+    //self.inputField.leftViewMode = UITextFieldViewModeAlways;
     self.inputField.backgroundColor = [UIColor whiteColor];
-    self.inputField.placeholder = [ChatWidget LocalizedString:@"ChatPlaceholderText"];
+    //self.inputField.placeholder = [ChatWidget LocalizedString:@"ChatPlaceholderText"];
     //self.inputField.layer.cornerRadius = 15;
     self.inputField.returnKeyType = UIReturnKeySend;
     self.inputField.delegate = self;
@@ -112,14 +113,31 @@
         }
 }
 
-- (void)sendMsg
+- (void)exit
 {
     self.hidden = YES;
     self.exitInputButton.hidden = YES;
-    NSString* sendText = self.inputField.text;
-        if(sendText.length > 0) {
-            [self.delegate msgWillSend:sendText];
+    self.inputField.text = @"";
+    [self.inputField resignFirstResponder];
+}
+
+- (void)sendMsg
+{
+    NSAttributedString*attr = self.inputField.attributedText;
+    __block NSString* str = @"";
+    [attr enumerateAttributesInRange:NSMakeRange(0, attr.length) options:0 usingBlock:^(NSDictionary<NSAttributedStringKey,id> * _Nonnull attrs, NSRange range, BOOL * _Nonnull stop) {
+        EmojiTextAttachment* attachment = [attrs objectForKey:NSAttachmentAttributeName];
+        if(attachment){
+            NSString* fileType = attachment.emojiStr;
+            str = [str stringByAppendingString:fileType];
+        }else{
+            NSAttributedString* tmp = [attr attributedSubstringFromRange:range];
+            str = [str stringByAppendingString:tmp.string];
         }
+    }];
+    if(str.length > 0) {
+        [self.delegate msgWillSend:str];
+    }
     self.inputField.text = @"";
     [self.inputField resignFirstResponder];
 }
@@ -130,26 +148,59 @@
     [self performSelector:@selector(sendMsg) withObject:nil afterDelay:0.1];
 }
 
-#pragma mark - UITextFieldDelegate
-- (BOOL)textFieldShouldReturn:(UITextField *)textField
+#pragma mark - UITextViewDelegate
+- (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text
 {
-    [self sendButtonAction];
-    return YES;
-    
-}
-#pragma mark - CustomKeyBoardDelegate
-
-- (void)emojiItemDidClicked:(NSString *)item{
-    self.inputField.text = [self.inputField.text stringByAppendingString:item];
-}
-
-- (void)emojiDidDelete
-{
-    if ([self.inputField.text length] > 0) {
-        NSRange range = [self.inputField.text rangeOfComposedCharacterSequenceAtIndex:self.inputField.text.length-1];
-        self.inputField.text = [self.inputField.text substringToIndex:range.location];
+    if ([text isEqualToString:@"\n"]) {
+        [self sendMsg];
+        return NO;
     }
+    return YES;
 }
+
+#pragma mark - CustomKeyBoardDelegate
+- (void)emojiItemDidClicked:(NSString *)item{
+    NSRange selectedRange = [self selectedRange:self.inputField];
+    NSMutableAttributedString* attrString = [self.inputField.attributedText mutableCopy];
+    EmojiTextAttachment* attachMent = [[EmojiTextAttachment alloc] init];
+    NSString* imageFileName = [[EMEmojiHelper sharedHelper].emojiFilesDic objectForKey:item];
+    if(imageFileName.length == 0) return;
+    attachMent.emojiStr = item;
+    attachMent.bounds = CGRectMake(0, -1, 12, 12);
+    attachMent.image = [UIImage imageNamedFromBundle:imageFileName];
+    NSAttributedString *imageStr = [NSAttributedString attributedStringWithAttachment:attachMent];
+    [attrString appendAttributedString:imageStr];
+    self.inputField.attributedText = attrString;
+ }
+
+ - (void)emojiDidDelete
+ {
+     if ([self.inputField.attributedText length] > 0) {
+         NSRange selectedRange = [self selectedRange:self.inputField];
+         NSMutableAttributedString* attrString = [self.inputField.attributedText mutableCopy];
+         if(selectedRange.length > 0)
+         {
+             [attrString deleteCharactersInRange:selectedRange];
+         }else{
+             if(selectedRange.location > 0)
+                 [attrString deleteCharactersInRange:NSMakeRange(selectedRange.location-1, 1)];
+         }
+
+         self.inputField.attributedText = attrString;
+     }
+ }
+
+ - (NSRange)selectedRange:(UITextField*)textField
+ {
+     UITextRange* range = [textField selectedTextRange];
+     UITextPosition* beginning = textField.beginningOfDocument;
+     UITextPosition* selectionStart = range.start;
+     UITextPosition* selectionEnd = range.end;
+     const NSInteger location = [textField offsetFromPosition:beginning toPosition:selectionStart];
+     const NSInteger length = [textField offsetFromPosition:selectionStart toPosition:selectionEnd];
+
+     return NSMakeRange(location, length);
+ }
 
 #pragma mark - 键盘显示
 - (void)keyboardWillChangeFrame:(NSNotification *)notification{

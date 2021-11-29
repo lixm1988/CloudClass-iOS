@@ -10,7 +10,7 @@ end
 
 target 'ChatWidget' do
   use_frameworks!
-  pod 'HyphenateChat'
+  pod 'AgoraChat'
   pod 'SDWebImage'
   pod 'Masonry'
   pod 'WHToast'

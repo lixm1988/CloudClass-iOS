@@ -146,30 +146,32 @@ static BOOL isSDKInited = NO;
                 [weakself.delegate mutedStateDidChanged];
         }
     }];
-    AgoraChatCursorResult* result =  [[[AgoraChatClient sharedClient] chatManager] fetchHistoryMessagesFromServer:self.chatRoomId conversationType:AgoraChatConversationTypeGroupChat startMessageId:@"" pageSize:50 error:nil];
-    if(result.list.count > 0){
-        if(self.latestMsgId.length > 0)
-        {
-            NSArray* arr = [[result.list reverseObjectEnumerator] allObjects];
-            NSMutableArray* msgToAdd = [NSMutableArray array];
-            for (AgoraChatMessage* msg in arr) {
-                if([msg.messageId isEqualToString:self.latestMsgId]) {
-                    if(self.dataArray.count > 0){
-                        [self.delegate chatMessageDidReceive];
+    [[[AgoraChatClient sharedClient] chatManager] asyncFetchHistoryMessagesFromServer:self.chatRoomId conversationType:AgoraChatConversationTypeGroupChat startMessageId:@"" pageSize:50 completion:^(AgoraChatCursorResult *aResult, AgoraChatError *aError) {
+            if(aResult.list.count > 0){
+                if(weakself.latestMsgId.length > 0)
+                {
+                    NSArray* arr = [[aResult.list reverseObjectEnumerator] allObjects];
+                    NSMutableArray* msgToAdd = [NSMutableArray array];
+                    for (AgoraChatMessage* msg in arr) {
+                        if([msg.messageId isEqualToString:weakself.latestMsgId]) {
+                            if(weakself.dataArray.count > 0){
+                                [weakself.delegate chatMessageDidReceive];
+                            }
+                            return;
+                        }else{
+                            [weakself.dataArray insertObject:msg atIndex:0];
+                        }
                     }
-                    return;
                 }else{
-                    [self.dataArray insertObject:msg atIndex:0];
+                    [weakself.dataArray addObjectsFromArray:aResult.list];
+                    AgoraChatMessage* lastMsg = [aResult.list lastObject];
+                    if(lastMsg)
+                        weakself.latestMsgId = lastMsg.messageId;
+                    [weakself.delegate chatMessageDidReceive];
                 }
             }
-        }else{
-            [weakself.dataArray addObjectsFromArray:result.list];
-            AgoraChatMessage* lastMsg = [result.list lastObject];
-            if(lastMsg)
-                self.latestMsgId = lastMsg.messageId;
-            [weakself.delegate chatMessageDidReceive];
-        }
-    }
+    }];
+    
     // 获取是否被禁言
     [[[AgoraChatClient sharedClient] roomManager] isMemberInWhiteListFromServerWithChatroomId:self.chatRoomId completion:^(BOOL inWhiteList, AgoraChatError *aError) {
         if(!aError) {
@@ -250,8 +252,7 @@ static BOOL isSDKInited = NO;
         if(self.user.avatarurl.length <= 0) {
             self.user.avatarurl = @"https://download-sdk.oss-cn-beijing.aliyuncs.com/downloads/IMDemo/avatar/Image1.png";
         }
-        NSString* retStr = [EMEmojiHelper convertEmojiToKeys:aText];
-        AgoraChatTextMessageBody* textBody = [[AgoraChatTextMessageBody alloc] initWithText:retStr];
+        AgoraChatTextMessageBody* textBody = [[AgoraChatTextMessageBody alloc] initWithText:aText];
         NSMutableDictionary* ext = [@{kMsgType:[NSNumber numberWithInteger: aType],
                                       @"role": [NSNumber numberWithInteger:self.user.role],
                                       kAvatarUrl: self.user.avatarurl} mutableCopy];
